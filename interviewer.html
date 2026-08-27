@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Interviewer Dashboard
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            background:
+                #f4f7f9;
+
+            color:
+                #111;
+        }
+
+
+        .header {
+
+            background:
+                #007a45;
+
+            color:
+                white;
+
+            padding:
+                18px 28px;
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+        }
+
+
+        .header h1 {
+
+            margin: 0;
+
+            font-size:
+                22px;
+        }
+
+
+        .date {
+
+            font-size:
+                14px;
+        }
+
+
+        .container {
+
+            max-width:
+                1200px;
+
+            margin:
+                25px auto;
+
+            padding:
+                0 20px;
+        }
+
+
+        .top-card {
+
+            background:
+                white;
+
+            padding:
+                20px;
+
+            border-radius:
+                14px;
+
+            margin-bottom:
+                20px;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,.07);
+        }
+
+
+        .interviewer-input {
+
+            width:
+                100%;
+
+            max-width:
+                400px;
+
+            padding:
+                12px;
+
+            border:
+                1px solid #ccc;
+
+            border-radius:
+                8px;
+
+            font-size:
+                16px;
+        }
+
+
+        .stats {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap:
+                15px;
+
+            margin-bottom:
+                25px;
+        }
+
+
+        .stat {
+
+            background:
+                white;
+
+            border-radius:
+                14px;
+
+            padding:
+                18px;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,.06);
+        }
+
+
+        .stat-label {
+
+            color:
+                #666;
+
+            font-size:
+                14px;
+        }
+
+
+        .stat-number {
+
+            font-size:
+                30px;
+
+            font-weight:
+                bold;
+
+            margin-top:
+                7px;
+        }
+
+
+        .queue {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(
+                        290px,
+                        1fr
+                    )
+                );
+
+            gap:
+                15px;
+        }
+
+
+        .candidate {
+
+            background:
+                white;
+
+            border-radius:
+                14px;
+
+            padding:
+                20px;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,.07);
+        }
+
+
+        .queue-number {
+
+            font-size:
+                30px;
+
+            font-weight:
+                bold;
+
+            color:
+                #007a45;
+        }
+
+
+        .candidate-name {
+
+            font-size:
+                19px;
+
+            font-weight:
+                bold;
+
+            margin-top:
+                8px;
+        }
+
+
+        .position {
+
+            color:
+                #666;
+
+            margin-top:
+                5px;
+        }
+
+
+        .status {
+
+            display:
+                inline-block;
+
+            padding:
+                6px 12px;
+
+            border-radius:
+                20px;
+
+            margin-top:
+                14px;
+
+            font-size:
+                12px;
+
+            font-weight:
+                bold;
+        }
+
+
+        .status-menunggu {
+
+            background:
+                #fff3cd;
+
+            color:
+                #856404;
+        }
+
+
+        .status-interview {
+
+            background:
+                #cfe2ff;
+
+            color:
+                #084298;
+        }
+
+
+        .status-selesai {
+
+            background:
+                #d1e7dd;
+
+            color:
+                #0f5132;
+        }
+
+
+        button {
+
+            border:
+                none;
+
+            border-radius:
+                8px;
+
+            padding:
+                12px;
+
+            cursor:
+                pointer;
+
+            font-weight:
+                bold;
+        }
+
+
+        .btn-ambil {
+
+            width:
+                100%;
+
+            margin-top:
+                15px;
+
+            background:
+                #007a45;
+
+            color:
+                white;
+        }
+
+
+        .btn-interview {
+
+            width:
+                100%;
+
+            margin-top:
+                15px;
+
+            background:
+                #007a45;
+
+            color:
+                white;
+        }
+
+
+        .btn-panggil {
+
+            width:
+                100%;
+
+            margin-top:
+                10px;
+
+            background:
+                #f0ad00;
+
+            color:
+                #111;
+        }
+
+
+        .btn-hasil {
+
+            width:
+                100%;
+
+            margin-top:
+                15px;
+
+            background:
+                #222;
+
+            color:
+                white;
+        }
+
+
+        .call-info {
+
+            margin-top:
+                10px;
+
+            padding:
+                9px;
+
+            background:
+                #fff8e1;
+
+            border-radius:
+                8px;
+
+            font-size:
+                12px;
+
+            color:
+                #765800;
+
+            text-align:
+                center;
+        }
+
+
+        .empty {
+
+            background:
+                white;
+
+            padding:
+                50px;
+
+            text-align:
+                center;
+
+            border-radius:
+                14px;
+
+            color:
+                #777;
+        }
+
+
+        .modal {
+
+            display:
+                none;
+
+            position:
+                fixed;
+
+            inset:
+                0;
+
+            background:
+                rgba(
+                    0,
+                    0,
+                    0,
+                    .55
+                );
+
+            z-index:
+                9999;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            padding:
+                15px;
+        }
+
+
+        .modal-box {
+
+            width:
+                100%;
+
+            max-width:
+                650px;
+
+            max-height:
+                92vh;
+
+            overflow-y:
+                auto;
+
+            background:
+                white;
+
+            border-radius:
+                16px;
+
+            padding:
+                25px;
+
+            box-shadow:
+                0 15px 50px
+                rgba(0,0,0,.25);
+        }
+
+
+        .modal-header {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+
+            margin-bottom:
+                20px;
+        }
+
+
+        .modal-header h2 {
+
+            margin:
+                0;
+        }
+
+
+        .close {
+
+            background:
+                #eee;
+
+            color:
+                #333;
+
+            width:
+                38px;
+
+            height:
+                38px;
+
+            border-radius:
+                50%;
+
+            padding:
+                0;
+
+            font-size:
+                20px;
+        }
+
+
+        .candidate-info {
+
+            background:
+                #f5f7f8;
+
+            padding:
+                15px;
+
+            border-radius:
+                10px;
+
+            margin-bottom:
+                20px;
+        }
+
+
+        .candidate-info strong {
+
+            font-size:
+                18px;
+        }
+
+
+        .aspect {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+
+            padding:
+                14px 0;
+
+            border-bottom:
+                1px solid #eee;
+
+            gap:
+                15px;
+        }
+
+
+        .aspect-name {
+
+            font-weight:
+                bold;
+
+            flex:
+                1;
+        }
+
+
+        .score-select {
+
+            width:
+                90px;
+
+            padding:
+                9px;
+
+            border:
+                1px solid #ccc;
+
+            border-radius:
+                7px;
+
+            font-size:
+                16px;
+        }
+
+
+        .total-box {
+
+            margin-top:
+                20px;
+
+            padding:
+                18px;
+
+            background:
+                #f5f7f8;
+
+            border-radius:
+                12px;
+
+            text-align:
+                center;
+        }
+
+
+        .total-label {
+
+            font-size:
+                14px;
+
+            color:
+                #666;
+        }
+
+
+        .total-score {
+
+            font-size:
+                40px;
+
+            font-weight:
+                bold;
+
+            margin:
+                5px 0;
+        }
+
+
+        .result {
+
+            font-size:
+                20px;
+
+            font-weight:
+                bold;
+
+            padding:
+                12px;
+
+            border-radius:
+                10px;
+        }
+
+
+        .result-recommended {
+
+            background:
+                #d1e7dd;
+
+            color:
+                #0f5132;
+        }
+
+
+        .result-not {
+
+            background:
+                #f8d7da;
+
+            color:
+                #842029;
+        }
+
+
+        .recommendation-section {
+
+            margin-top:
+                20px;
+
+            padding:
+                18px;
+
+            background:
+                #f8faf9;
+
+            border-radius:
+                12px;
+
+            border:
+                1px solid #e3e8e5;
+        }
+
+
+        .recommendation-section h3 {
+
+            margin-top:
+                0;
+        }
+
+
+        .field {
+
+            margin-bottom:
+                15px;
+        }
+
+
+        .field label {
+
+            display:
+                block;
+
+            font-weight:
+                bold;
+
+            margin-bottom:
+                7px;
+        }
+
+
+        .field select,
+        .field textarea {
+
+            width:
+                100%;
+
+            padding:
+                11px;
+
+            border:
+                1px solid #ccc;
+
+            border-radius:
+                8px;
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            font-size:
+                14px;
+        }
+
+
+        .field textarea {
+
+            min-height:
+                100px;
+
+            resize:
+                vertical;
+        }
+
+
+        .preview {
+
+            margin-top:
+                20px;
+
+            border:
+                2px solid #ddd;
+
+            border-radius:
+                12px;
+
+            padding:
+                16px;
+        }
+
+
+        .preview h3 {
+
+            margin-top:
+                0;
+        }
+
+
+        .preview-row {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            padding:
+                5px 0;
+
+            gap:
+                10px;
+        }
+
+
+        .btn-submit {
+
+            width:
+                100%;
+
+            margin-top:
+                20px;
+
+            padding:
+                15px;
+
+            background:
+                #007a45;
+
+            color:
+                white;
+
+            font-size:
+                16px;
+        }
+
+
+        .final-lock {
+
+            background:
+                #fff3cd;
+
+            color:
+                #856404;
+
+            padding:
+                12px;
+
+            border-radius:
+                9px;
+
+            margin-bottom:
+                18px;
+
+            font-size:
+                14px;
+
+            font-weight:
+                bold;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .stats {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .aspect {
+
+                align-items:
+                    flex-start;
+
+                flex-direction:
+                    column;
+            }
+
+
+            .score-select {
+
+                width:
+                    100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <header class="header">
+
+        <h1>
+            INTERVIEW DASHBOARD
+        </h1>
+
+        <div
+            class="date"
+            id="tanggal"
+        >
+            -
+        </div>
+
+    </header>
+
+
+    <main class="container">
+
+
+        <section class="top-card">
+
+            <h2>
+                Identitas Interviewer
+            </h2>
+
+            <input
+                id="interviewerName"
+                class="interviewer-input"
+                type="text"
+                placeholder="Masukkan nama interviewer"
+            >
+
+            <input
+                id="interviewerDesk"
+                class="interviewer-input"
+                type="text"
+                inputmode="numeric"
+                placeholder="Masukkan nomor meja"
+                style="margin-top:12px;"
+            >
+
+        </section>
+
+
+        <section class="stats">
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Menunggu
+                </div>
+
+                <div
+                    class="stat-number"
+                    id="jumlahMenunggu"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Sedang Interview
+                </div>
+
+                <div
+                    class="stat-number"
+                    id="jumlahInterview"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Selesai
+                </div>
+
+                <div
+                    class="stat-number"
+                    id="jumlahSelesai"
+                >
+                    0
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <h2>
+            Daftar Kandidat
+        </h2>
+
+
+        <section
+            id="queue"
+            class="queue"
+        >
+
+            <div class="empty">
+
+                Memuat data kandidat...
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- ==================================================
+         MODAL INTERVIEW
+         ================================================== -->
+
+    <div
+        class="modal"
+        id="interviewModal"
+    >
+
+        <div class="modal-box">
+
+
+            <div class="modal-header">
+
+                <h2>
+                    Interview Candidate
+                </h2>
+
+                <button
+                    class="close"
+                    onclick="tutupInterview()"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                class="candidate-info"
+                id="candidateInfo"
+            >
+                -
+            </div>
+
+
+            <div id="formInterview">
+
+
+                <div class="aspect">
+
+                    <div class="aspect-name">
+                        Penampilan
+                    </div>
+
+                    <select
+                        class="score-select"
+                        id="scorePenampilan"
+                    >
+
+                        <option value="0">
+                            -
+                        </option>
+
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="aspect">
+
+                    <div class="aspect-name">
+                        Motivasi
+                    </div>
+
+                    <select
+                        class="score-select"
+                        id="scoreMotivasi"
+                    >
+
+                        <option value="0">-</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="aspect">
+
+                    <div class="aspect-name">
+                        Komunikasi
+                    </div>
+
+                    <select
+                        class="score-select"
+                        id="scoreKomunikasi"
+                    >
+
+                        <option value="0">-</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="aspect">
+
+                    <div class="aspect-name">
+                        Pengalaman Relevan
+                    </div>
+
+                    <select
+                        class="score-select"
+                        id="scorePengalaman"
+                    >
+
+                        <option value="0">-</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="aspect">
+
+                    <div class="aspect-name">
+                        Culture Fit - Kontribusi Maksimal
+                    </div>
+
+                    <select
+                        class="score-select"
+                        id="scoreCulture"
+                    >
+
+                        <option value="0">-</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="total-box">
+
+                    <div class="total-label">
+                        TOTAL NILAI
+                    </div>
+
+                    <div
+                        class="total-score"
+                        id="totalScore"
+                    >
+                        0 / 25
+                    </div>
+
+
+                    <div
+                        class="result result-not"
+                        id="hasilScore"
+                    >
+                        BELUM DINILAI
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="recommendation-section"
+                    id="recommendationSection"
+                    style="display:none;"
+                >
+
+                    <h3>
+                        Rekomendasi Penempatan
+                    </h3>
+
+
+                    <div class="field">
+
+                        <label>
+                            Rekomendasi Jabatan
+                        </label>
+
+                        <select
+                            id="rekomendasiJabatan"
+                        >
+
+                            <option value="">
+                                -- Pilih Jabatan --
+                            </option>
+
+                            <option value="FL Organik">
+                                FL Organik
+                            </option>
+
+                            <option value="Sales Organik">
+                                Sales Organik
+                            </option>
+
+                            <option value="FL Bibit">
+                                FL Bibit
+                            </option>
+
+                            <option value="Sales TAD">
+                                Sales TAD
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Rekomendasi Area
+                        </label>
+
+                        <select
+                            id="rekomendasiArea"
+                        >
+
+                            <option value="">
+                                -- Pilih Area --
+                            </option>
+
+                            <option value="Area Jakarta Thamrin">
+                                Area Jakarta Thamrin
+                            </option>
+
+                            <option value="Area Jakarta Barat">
+                                Area Jakarta Barat
+                            </option>
+
+                            <option value="Area Tangerang Selatan">
+                                Area Tangerang Selatan
+                            </option>
+
+                            <option value="Area Banten">
+                                Area Banten
+                            </option>
+
+                            <option value="RO IV Jakarta 1">
+                                RO IV Jakarta 1
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        Catatan Interviewer
+                    </label>
+
+                    <textarea
+                        id="catatan"
+                        placeholder="Tulis catatan interviewer..."
+                    ></textarea>
+
+                </div>
+
+
+                <div
+                    class="preview"
+                    id="preview"
+                >
+
+                    <h3>
+                        Preview Hasil
+                    </h3>
+
+
+                    <div class="preview-row">
+
+                        <span>
+                            Total Nilai
+                        </span>
+
+                        <strong id="previewTotal">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span>
+                            Hasil
+                        </span>
+
+                        <strong id="previewHasil">
+                            -
+                        </strong>
+
+                    </div>
+
+
+                    <div
+                        class="preview-row"
+                        id="previewJabatanRow"
+                        style="display:none;"
+                    >
+
+                        <span>
+                            Jabatan
+                        </span>
+
+                        <strong
+                            id="previewJabatan"
+                        >
+                            -
+                        </strong>
+
+                    </div>
+
+
+                    <div
+                        class="preview-row"
+                        id="previewAreaRow"
+                        style="display:none;"
+                    >
+
+                        <span>
+                            Area
+                        </span>
+
+                        <strong
+                            id="previewArea"
+                        >
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="btn-submit"
+                    id="btnSubmit"
+                    onclick="submitInterview()"
+                >
+                    SUBMIT HASIL INTERVIEW
+                </button>
+
+
+            </div>
+
+
+            <div
+                id="finalResult"
+                style="display:none;"
+            >
+
+                <div class="final-lock">
+
+                    🔒 HASIL FINAL —
+                    DATA TIDAK DAPAT DIUBAH
+
+                </div>
+
+
+                <div
+                    class="preview"
+                    id="finalContent"
+                >
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <script
+        type="module"
+        src="interviewer.js"
+    ></script>
+
+</body>
+
+</html>

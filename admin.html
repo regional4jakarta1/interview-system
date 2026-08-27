@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Admin Dashboard - Interview System
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7f9;
+            color: #111;
+        }
+
+        /* ==================================================
+           HEADER
+           ================================================== */
+
+        .header {
+            background: #007a45;
+            color: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .header-left p {
+            margin: 5px 0 0;
+            opacity: .85;
+            font-size: 13px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 14px;
+        }
+
+        /* ==================================================
+           CONTAINER
+           ================================================== */
+
+        .container {
+            max-width: 1550px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        /* ==================================================
+           FILTER
+           ================================================== */
+
+        .filter-card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #007a45;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-excel {
+            background: #198754;
+            color: white;
+        }
+
+        /* ==================================================
+           STATISTICS
+           ================================================== */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: white;
+            padding: 17px;
+            border-radius: 13px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 7px;
+        }
+
+        /* ==================================================
+           SUMMARY
+           ================================================== */
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 17px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        /* ==================================================
+           TABLE
+           ================================================== */
+
+        .table-card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        }
+
+        .table-header {
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .table-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1800px;
+        }
+
+        th {
+            background: #f0f3f4;
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px;
+            border-top: 1px solid #eee;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8faf9;
+        }
+
+        .queue-number {
+            font-weight: bold;
+            color: #007a45;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-menunggu {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-interview {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status-interview2 {
+            background: #ffe5cc;
+            color: #b45309;
+        }
+
+        .status-selesai {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .result-recommended {
+            color: #0f5132;
+            font-weight: bold;
+        }
+
+        .result-not {
+            color: #842029;
+            font-weight: bold;
+        }
+
+        .result-waiting {
+            color: #856404;
+            font-weight: bold;
+        }
+
+        .detail-button {
+            background: #212529;
+            color: white;
+            padding: 7px 10px;
+            font-size: 11px;
+        }
+
+        /* ==================================================
+           MODAL
+           ================================================== */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal-box {
+            background: white;
+            width: 100%;
+            max-width: 850px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close-button {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            padding: 0;
+            background: #eee;
+            font-size: 20px;
+        }
+
+        .detail-box {
+            background: #f6f8f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-box h3 {
+            margin-top: 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 7px 0;
+            border-bottom: 1px solid #e3e6e8;
+            font-size: 14px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #666;
+        }
+
+        .detail-value {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .final-result {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .final-recommended {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .final-not {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .final-waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .notes {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .stage-title {
+            margin-top: 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007a45;
+        }
+
+        .stage-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stage1 {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .stage2 {
+            background: #ffe5cc;
+            color: #b45309;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+        @media (max-width: 1100px) {
+
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .filter-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 650px) {
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+    
+        /* ==================================================
+           TAB INTERVIEW
+           ================================================== */
+        .interview-tabs {
+            display:flex;
+            gap:10px;
+            margin:0 0 18px 0;
+            background:#fff;
+            padding:6px;
+            border-radius:12px;
+            box-shadow:0 2px 10px rgba(0,0,0,.06);
+        }
+
+        .interview-tab {
+            flex:1;
+            border:0;
+            background:#f3f4f6;
+            color:#555;
+            padding:13px 18px;
+            border-radius:9px;
+            font-size:14px;
+            font-weight:700;
+            cursor:pointer;
+            transition:.2s;
+        }
+
+        .interview-tab:hover {
+            background:#e9eaec;
+        }
+
+        .interview-tab.active {
+            background:#111827;
+            color:#fff;
+        }
+
+        .tab-description {
+            margin:-8px 0 18px;
+            color:#666;
+            font-size:13px;
+        }
+</style>
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="header-left">
+
+        <h1>
+            ADMIN DASHBOARD
+        </h1>
+
+        <p>
+            Interview System
+        </p>
+
+    </div>
+
+    <div
+        class="header-right"
+        id="tanggalAktif"
+    >
+        -
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <!-- ==================================================
+         INTERVIEW TABS
+         ================================================== -->
+
+    <div class="interview-tabs">
+
+        <button type="button" class="interview-tab active" id="tabAdminAll" onclick="gantiTabInterview('all')">
+            ALL
+        </button>
+
+        <button type="button" class="interview-tab" id="tabAdminOrganik" onclick="gantiTabInterview('organik')">
+            ORGANIK
+        </button>
+
+        <button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
+            BIBIT
+        </button>
+
+        <button type="button" class="interview-tab" id="tabAdminTad" onclick="gantiTabInterview('tad')">
+            TAD
+        </button>
+
+    </div>
+
+    <div class="tab-description" id="tabDescription">
+        Rekap keseluruhan seluruh peserta interview.
+    </div>
+
+
+    <!-- ==================================================
+         FILTER
+         ================================================== -->
+
+    <section class="filter-card">
+
+        <h2>
+            Filter Data
+        </h2>
+
+        <div class="filter-grid">
+
+            <div class="field">
+
+                <label>
+                    Tanggal Mulai
+                </label>
+
+                <input
+                    type="date"
+                    id="filterTanggalMulai"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Tanggal Sampai
+                </label>
+
+                <input
+                    type="date"
+                    id="filterTanggalSelesai"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Cari Nama / Nomor Kandidat
+                </label>
+
+                <input
+                    type="text"
+                    id="filterSearch"
+                    placeholder="Contoh: Faiz atau A-001"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Status
+                </label>
+
+                <select id="filterStatus">
+
+                    <option value="">
+                        Semua Status
+                    </option>
+
+                    <option value="Menunggu">
+                        Menunggu
+                    </option>
+
+                    <option value="Sedang Interview">
+                        Sedang Interview
+                    </option>
+
+                    <option value="Selesai">
+                        Selesai
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="field">
+                <label>Kategori</label>
+                <select id="filterKategori">
+                    <option value="">Semua Kategori</option>
+                    <option value="organik">Organik</option>
+                    <option value="bibit">Bibit</option>
+                    <option value="tad">TAD</option>
+                </select>
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Hasil Interview 1
+                </label>
+
+                <select id="filterHasil">
+
+                    <option value="">
+                        Semua Hasil
+                    </option>
+
+                    <option value="Disarankan">
+                        Disarankan
+                    </option>
+
+                    <option value="Dipertimbangkan">
+                        Dipertimbangkan
+                    </option>
+
+                    <option value="Tidak Direkomendasikan">
+                        Tidak Direkomendasikan
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Hasil Interview 2
+                </label>
+
+                <select id="filterHasil2">
+
+                    <option value="">
+                        Semua Hasil
+                    </option>
+
+                    <option value="Setuju">
+                        Setuju
+                    </option>
+
+                    <option value="Tidak Setuju">
+                        Tidak Setuju
+                    </option>
+
+                    <option value="Menunggu">
+                        Menunggu
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Interviewer
+                </label>
+
+                <select id="filterInterviewer">
+
+                    <option value="">
+                        Semua Interviewer
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Rekomendasi Jabatan
+                </label>
+
+                <select id="filterJabatan">
+
+                    <option value="">
+                        Semua Jabatan
+                    </option>
+
+                    <option value="FL Organik">
+                        FL Organik
+                    </option>
+
+                    <option value="Sales Organik">
+                        Sales Organik
+                    </option>
+
+                    <option value="FL Bibit">
+                        FL Bibit
+                    </option>
+
+                    <option value="Sales TAD">
+                        Sales TAD
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Rekomendasi Area
+                </label>
+
+                <select id="filterArea">
+
+                    <option value="">
+                        Semua Area
+                    </option>
+
+                    <option value="Area Jakarta Thamrin">
+                        Area Jakarta Thamrin
+                    </option>
+
+                    <option value="Area Jakarta Barat">
+                        Area Jakarta Barat
+                    </option>
+
+                    <option value="Area Tangerang Selatan">
+                        Area Tangerang Selatan
+                    </option>
+
+                    <option value="Area Banten">
+                        Area Banten
+                    </option>
+
+                    <option value="RO IV Jakarta 1">
+                        RO IV Jakarta 1
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="filter-buttons">
+
+            <button
+                class="btn-primary"
+                onclick="terapkanFilter()"
+            >
+                TERAPKAN FILTER
+            </button>
+
+
+            <button
+                class="btn-secondary"
+                onclick="resetFilter()"
+            >
+                RESET
+            </button>
+
+
+            <button
+                class="btn-excel"
+                onclick="exportExcel()"
+            >
+                DOWNLOAD EXCEL
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         MASTER DATA BSP
+         ================================================== -->
+
+    <section class="filter-card">
+
+        <h2>
+            Master Data BSP
+        </h2>
+
+        <p
+            style="
+                margin-top:5px;
+                color:#666;
+                font-size:13px;
+            "
+        >
+            Upload file Excel BSP dengan kolom
+            <strong>No Registrasi</strong>
+            dan
+            <strong>Nama</strong>.
+        </p>
+
+
+        <div
+            style="
+                display:flex;
+                gap:12px;
+                align-items:center;
+                flex-wrap:wrap;
+                margin-top:15px;
+            "
+        >
+
+            <input
+                type="file"
+                id="fileBSP"
+                accept=".xlsx,.xls"
+            >
+
+
+            <button
+                class="btn-primary"
+                onclick="importBSPExcel()"
+            >
+                IMPORT / UPDATE BSP
+            </button>
+
+        </div>
+
+
+        <div
+            id="statusImportBSP"
+            style="
+                margin-top:12px;
+                font-size:13px;
+                color:#666;
+            "
+        >
+            Belum ada proses import.
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         STATISTICS
+         ================================================== -->
+
+    <section class="stats">
+
+        <div class="stat">
+            <div class="stat-label">Total Kandidat</div>
+            <div class="stat-number" id="statTotal">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Menunggu</div>
+            <div class="stat-number" id="statMenunggu">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Sedang Interview</div>
+            <div class="stat-number" id="statInterview">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Selesai</div>
+            <div class="stat-number" id="statSelesai">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Disarankan</div>
+            <div class="stat-number" id="statRecommended">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Dipertimbangkan</div>
+            <div class="stat-number" id="statConsidered">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Tidak Direkomendasikan</div>
+            <div class="stat-number" id="statNotRecommended">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Setuju</div>
+            <div class="stat-number" id="statSetuju2">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Tidak Setuju</div>
+            <div class="stat-number" id="statTidakSetuju2">0</div>
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         SUMMARY
+         ================================================== -->
+
+    <section class="summary-grid" id="summarySection">
+
+        <div class="summary-card">
+
+            <h3>
+                Rekap Rekomendasi Jabatan
+            </h3>
+
+            <div id="summaryJabatan">
+
+                <div class="loading">
+                    Memuat...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <h3>
+                Rekap Rekomendasi Area
+            </h3>
+
+            <div id="summaryArea">
+
+                <div class="loading">
+                    Memuat...
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         TABLE
+         ================================================== -->
+
+    <section class="table-card">
+
+        <div class="table-header">
+
+            <h2>
+                Data Kandidat
+            </h2>
+
+            <div
+                id="jumlahData"
+                style="
+                    color:#666;
+                    font-size:13px;
+                "
+            >
+                0 data
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            No
+                        </th>
+
+                        <th>
+                            Nomor Kandidat
+                        </th>
+
+                        <th>
+                            Nama
+                        </th>
+
+                        <th>
+                            NIK
+                        </th>
+
+                        <th>
+                            Email
+                        </th>
+
+                        <th>
+                            HP
+                        </th>
+
+                        <th>
+                            Posisi
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Tahap
+                        </th>
+
+                        <th>
+                            Total I1
+                        </th>
+
+                        <th>
+                            Hasil I1
+                        </th>
+
+                        <th>
+                            Jabatan
+                        </th>
+
+                        <th>
+                            Area
+                        </th>
+
+                        <th>
+                            Interviewer I1
+                        </th>
+
+                        <th>
+                            Interviewer I2
+                        </th>
+
+                        <th>
+                            Hasil I2
+                        </th>
+
+                        <th>
+                            Detail
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="tableBody">
+
+                    <tr>
+
+                        <td
+                            colspan="17"
+                            class="loading"
+                        >
+                            Memuat data...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- ==================================================
+     DETAIL MODAL
+     ================================================== -->
+
+<div
+    class="modal"
+    id="detailModal"
+>
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2>
+                Detail Kandidat
+            </h2>
+
+            <button
+                class="close-button"
+                onclick="tutupDetail()"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div id="detailContent">
+            Memuat...
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     SHEETJS
+     ================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+></script>
+
+
+<!-- ==================================================
+     ADMIN JS
+     ================================================== -->
+
+<script
+    type="module"
+    src="admin.js"
+></script>
+
+</body>
+
+</html>

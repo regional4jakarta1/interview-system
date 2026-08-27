@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Layar Panggilan Interview
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        html,
+        body {
+
+            margin: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            background:
+                #f4f7f9;
+        }
+
+
+        body {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+        }
+
+
+        .screen {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            text-align:
+                center;
+
+            padding:
+                40px;
+        }
+
+
+        .logo {
+
+            font-size:
+                clamp(20px, 2vw, 32px);
+
+            font-weight:
+                bold;
+
+            color:
+                #007a45;
+
+            letter-spacing:
+                2px;
+
+            margin-bottom:
+                15px;
+        }
+
+
+        .date {
+
+            font-size:
+                clamp(14px, 1.5vw, 22px);
+
+            color:
+                #666;
+
+            margin-bottom:
+                35px;
+        }
+
+
+        .title {
+
+            font-size:
+                clamp(20px, 2.5vw, 38px);
+
+            font-weight:
+                bold;
+
+            color:
+                #333;
+
+            margin-bottom:
+                20px;
+        }
+
+
+        .queue-number {
+
+            font-size:
+                clamp(100px, 18vw, 300px);
+
+            line-height:
+                .9;
+
+            font-weight:
+                900;
+
+            color:
+                #007a45;
+
+            margin:
+                20px 0 40px;
+        }
+
+
+        .message {
+
+            font-size:
+                clamp(20px, 2.5vw, 40px);
+
+            color:
+                #333;
+
+            margin-bottom:
+                15px;
+        }
+
+
+        .interviewer {
+
+            font-size:
+                clamp(28px, 4vw, 65px);
+
+            font-weight:
+                bold;
+
+            color:
+                #007a45;
+
+            margin-bottom:
+                20px;
+        }
+
+
+        .instruction {
+
+            font-size:
+                clamp(16px, 1.7vw, 26px);
+
+            color:
+                #666;
+        }
+
+
+        .waiting {
+
+            font-size:
+                clamp(24px, 3vw, 45px);
+
+            font-weight:
+                bold;
+
+            color:
+                #555;
+
+            margin-top:
+                40px;
+        }
+
+
+        .waiting-sub {
+
+            font-size:
+                clamp(15px, 1.5vw, 22px);
+
+            color:
+                #777;
+
+            margin-top:
+                10px;
+        }
+
+
+        .live {
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            gap:
+                8px;
+
+            margin-top:
+                35px;
+
+            font-size:
+                14px;
+
+            color:
+                #777;
+        }
+
+
+        .live-dot {
+
+            width:
+                10px;
+
+            height:
+                10px;
+
+            border-radius:
+                50%;
+
+            background:
+                #007a45;
+        }
+
+
+        /* ==================================================
+           SOUND BUTTON
+           ================================================== */
+
+        .sound-button {
+
+            position:
+                fixed;
+
+            top:
+                20px;
+
+            right:
+                20px;
+
+            padding:
+                12px 18px;
+
+            border:
+                none;
+
+            border-radius:
+                10px;
+
+            background:
+                #007a45;
+
+            color:
+                white;
+
+            font-size:
+                14px;
+
+            font-weight:
+                bold;
+
+            cursor:
+                pointer;
+
+            box-shadow:
+                0 4px 12px
+                rgba(0,0,0,.15);
+
+            z-index:
+                1000;
+        }
+
+
+        .sound-button.active {
+
+            background:
+                #198754;
+        }
+
+
+        .sound-button.disabled {
+
+            background:
+                #6c757d;
+        }
+
+
+        @media (
+            max-width: 600px
+        ) {
+
+            .screen {
+
+                padding:
+                    20px;
+            }
+
+
+            .queue-number {
+
+                margin:
+                    30px 0;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         SOUND BUTTON
+         ================================================== -->
+
+    <button
+        id="soundButton"
+        class="sound-button"
+        onclick="aktifkanSuara()"
+    >
+
+        🔇 AKTIFKAN SUARA
+
+    </button>
+
+
+    <!-- ==================================================
+         MAIN SCREEN
+         ================================================== -->
+
+    <main class="screen">
+
+
+        <div class="logo">
+
+            INTERVIEW SYSTEM
+
+        </div>
+
+
+        <div
+            class="date"
+            id="tanggal"
+        >
+            -
+        </div>
+
+
+        <!-- ==================================================
+             CALLING SCREEN
+             ================================================== -->
+
+        <div
+            id="callingScreen"
+            style="display:none;"
+        >
+
+            <div class="title">
+
+                NOMOR KANDIDAT YANG DIPANGGIL
+
+            </div>
+
+
+            <div
+                class="queue-number"
+                id="nomorAntrian"
+            >
+                -
+            </div>
+
+
+            <div class="message">
+
+                Silakan menuju meja
+
+            </div>
+
+
+            <div
+                class="interviewer"
+                id="nomorMeja"
+            >
+                -
+            </div>
+
+
+            <div class="instruction">
+
+                Mohon segera menuju meja
+                untuk proses interview.
+
+            </div>
+
+
+            <div class="live">
+
+                <span class="live-dot"></span>
+
+                Panggilan aktif
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             WAITING SCREEN
+             ================================================== -->
+
+        <div
+            id="waitingScreen"
+        >
+
+            <div class="title">
+
+                INTERVIEW SYSTEM
+
+            </div>
+
+
+            <div class="waiting">
+
+                Silakan menunggu
+
+            </div>
+
+
+            <div class="waiting-sub">
+
+                Nomor kandidat Anda akan dipanggil
+                melalui layar ini.
+
+            </div>
+
+
+            <div class="live">
+
+                <span class="live-dot"></span>
+
+                Sistem aktif
+
+            </div>
+
+        </div>
+
+
+    </main>
+
+
+    <script
+        type="module"
+        src="display.js?v=20260827-3"
+    ></script>
+
+
+</body>
+
+</html>

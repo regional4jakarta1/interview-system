@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Interview System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ========================================= -->
+    <!-- TANGGAL -->
+    <!-- ========================================= -->
+
+    <div class="date-area">
+
+        <span id="tanggalAktif"></span>
+
+        <button
+            class="admin-button"
+            onclick="bukaAdmin()"
+        >
+            ADMIN
+        </button>
+
+    </div>
+
+
+    <div class="container">
+
+        <h1>INTERVIEW SYSTEM</h1>
+
+        <p class="subtitle">
+            Candidate Check-In
+        </p>
+
+
+        <!-- ========================================= -->
+        <!-- HALAMAN CHECK-IN -->
+        <!-- ========================================= -->
+
+        <div id="halamanCheckIn">
+
+            <div class="card">
+
+                <!-- NO REGISTRASI -->
+
+                <label for="noRegistrasi">
+                    No Registrasi
+                </label>
+
+                <input
+                    type="text"
+                    id="noRegistrasi"
+                    placeholder="Masukkan 7 digit No Registrasi"
+                    maxlength="7"
+                    inputmode="numeric"
+                    autocomplete="off"
+                >
+
+
+                <!-- NAMA -->
+
+                <label for="nama">
+                    Nama Lengkap
+                </label>
+
+                <input
+                    type="text"
+                    id="nama"
+                    placeholder="Masukkan nama sesuai registrasi"
+                    autocomplete="off"
+                >
+
+
+                <!-- POSISI -->
+
+                <label for="posisi">
+                    Posisi
+                </label>
+
+                <select id="posisi">
+
+                    <option value="">
+                        -- Pilih Posisi --
+                    </option>
+
+                    <option value="Frontliner">
+                        Frontliner
+                    </option>
+
+                    <option value="Sales">
+                        Sales
+                    </option>
+
+                </select>
+
+
+                <!-- CHECK IN -->
+
+                <button
+                    class="checkin-button"
+                    onclick="checkIn()"
+                >
+                    CHECK-IN
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- HALAMAN NOMOR ANTRIAN -->
+        <!-- ========================================= -->
+
+        <div
+            id="halamanAntrian"
+            style="display:none;"
+        >
+
+            <div class="ticket-card">
+
+                <div class="success-icon">
+                    ✓
+                </div>
+
+                <h2>
+                    CHECK-IN BERHASIL
+                </h2>
+
+                <p class="waiting-text">
+                    Silakan menunggu hingga nomor kandidat Anda dipanggil.
+                </p>
+
+
+                <div class="queue-label">
+                    NOMOR ANTRIAN
+                </div>
+
+
+                <div
+                    id="nomorAntrian"
+                    class="queue-number"
+                >
+                    A-001
+                </div>
+
+
+                <div class="candidate-info">
+
+                    <p>
+                        <strong>No Registrasi</strong>
+
+                        <span id="hasilRegistrasi"></span>
+                    </p>
+
+
+                    <p>
+                        <strong>Nama</strong>
+
+                        <span id="hasilNama"></span>
+                    </p>
+
+
+                    <p>
+                        <strong>Posisi</strong>
+
+                        <span id="hasilPosisi"></span>
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- MODAL ADMIN -->
+    <!-- ========================================= -->
+
+    <div
+        id="adminModal"
+        class="modal"
+        style="display:none;"
+    >
+
+        <div class="modal-content">
+
+            <h2>
+                ADMIN
+            </h2>
+
+            <p>
+                Masukkan password administrator
+            </p>
+
+
+            <input
+                type="password"
+                id="adminPassword"
+                placeholder="Password"
+            >
+
+
+            <button
+                class="admin-login-button"
+                onclick="loginAdmin()"
+            >
+                LOGIN
+            </button>
+
+
+            <button
+                class="cancel-button"
+                onclick="tutupAdmin()"
+            >
+                BATAL
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- MODAL UBAH TANGGAL -->
+    <!-- ========================================= -->
+
+    <div
+        id="tanggalModal"
+        class="modal"
+        style="display:none;"
+    >
+
+        <div class="modal-content">
+
+            <h2>
+                ADMINISTRATOR
+            </h2>
+
+            <p>
+                Tanggal Interview Aktif
+            </p>
+
+
+            <input
+                type="date"
+                id="tanggalInput"
+            >
+
+
+            <button
+                class="admin-login-button"
+                onclick="simpanTanggal()"
+            >
+                SIMPAN TANGGAL
+            </button>
+
+
+            <button
+                class="cancel-button"
+                onclick="tutupTanggal()"
+            >
+                BATAL
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- FIREBASE SCRIPT -->
+    <!-- ========================================= -->
+
+    <script
+        type="module"
+        src="script.js"
+    ></script>
+
+</body>
+
+</html>
