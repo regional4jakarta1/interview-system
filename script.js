@@ -11,6 +11,8 @@ import {
     getFirestore,
     doc,
     getDoc,
+    setDoc,
+    onSnapshot,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
@@ -109,31 +111,153 @@ function getTodayKey() {
 
 
 // ======================================================
-// ACTIVE DATE
+// ACTIVE DATE - GLOBAL / FIRESTORE
+// ======================================================
+// Tanggal interview sekarang disimpan di Firestore, bukan
+// hanya localStorage. Jadi ketika admin mengubah tanggal
+// di satu perangkat, semua perangkat akan mengikuti tanggal
+// yang sama secara global.
 // ======================================================
 
-function getActiveDate() {
-
-    let activeDate =
-        localStorage.getItem(
-            "activeInterviewDate"
-        );
-
-
-    if (!activeDate) {
-
-        activeDate =
-            getTodayKey();
+const activeDateRef =
+    doc(
+        db,
+        "systemConfig",
+        "interviewSettings"
+    );
 
 
-        localStorage.setItem(
-            "activeInterviewDate",
-            activeDate
-        );
+let activeDateCache =
+    null;
+
+
+let activeDateReadyResolve;
+
+
+const activeDateReady =
+    new Promise(
+        resolve => {
+            activeDateReadyResolve = resolve;
+        }
+    );
+
+
+function setActiveDateCache(
+    tanggal
+) {
+
+    if (!tanggal) {
+        return;
     }
 
 
-    return activeDate;
+    activeDateCache =
+        tanggal;
+
+
+    // Cache lokal hanya sebagai cadangan/offline.
+    localStorage.setItem(
+        "activeInterviewDate",
+        tanggal
+    );
+
+
+    if (
+        activeDateReadyResolve
+    ) {
+        activeDateReadyResolve(
+            tanggal
+        );
+
+        activeDateReadyResolve =
+            null;
+    }
+
+
+    tampilkanTanggal();
+}
+
+
+// Dengarkan perubahan tanggal secara realtime.
+// Semua komputer yang membuka sistem akan menerima perubahan
+// admin tanpa perlu menyimpan tanggal masing-masing perangkat.
+onSnapshot(
+    activeDateRef,
+    snapshot => {
+
+        if (
+            snapshot.exists() &&
+            snapshot.data().activeDate
+        ) {
+
+            setActiveDateCache(
+                snapshot.data().activeDate
+            );
+
+            return;
+        }
+
+
+        const tanggalAwal =
+            getTodayKey();
+
+
+        setActiveDateCache(
+            tanggalAwal
+        );
+
+
+        setDoc(
+            activeDateRef,
+            {
+                activeDate:
+                    tanggalAwal,
+                updatedAt:
+                    new Date().toISOString()
+            },
+            { merge: true }
+        ).catch(
+            error => {
+                console.error(
+                    "Gagal membuat konfigurasi tanggal global:",
+                    error
+                );
+            }
+        );
+    },
+    error => {
+
+        console.error(
+            "Gagal membaca tanggal global:",
+            error
+        );
+
+        // Fallback supaya sistem tetap bisa dibuka bila
+        // koneksi Firestore sedang bermasalah.
+        const fallbackDate =
+            localStorage.getItem(
+                "activeInterviewDate"
+            ) ||
+            getTodayKey();
+
+
+        setActiveDateCache(
+            fallbackDate
+        );
+    }
+);
+
+
+async function getActiveDate() {
+
+    if (
+        activeDateCache
+    ) {
+        return activeDateCache;
+    }
+
+
+    return await activeDateReady;
 }
 
 
@@ -175,7 +299,7 @@ function formatTanggal(
 // TAMPILKAN TANGGAL
 // ======================================================
 
-function tampilkanTanggal() {
+async function tampilkanTanggal() {
 
     const element =
         document.getElementById(
@@ -190,7 +314,7 @@ function tampilkanTanggal() {
 
     element.innerText =
         formatTanggal(
-            getActiveDate()
+            await getActiveDate()
         );
 }
 
@@ -507,7 +631,7 @@ async function prosesCheckIn(
 ) {
 
     const activeDate =
-        getActiveDate();
+        await getActiveDate();
 
 
     // ==================================================
@@ -1408,7 +1532,7 @@ function tutupAdmin() {
 // LOGIN ADMIN
 // ======================================================
 
-function loginAdmin() {
+async function loginAdmin() {
 
     const password =
         document
@@ -1460,7 +1584,7 @@ function loginAdmin() {
     ) {
 
         input.value =
-            getActiveDate();
+            await getActiveDate();
     }
 }
 
@@ -1469,7 +1593,7 @@ function loginAdmin() {
 // SIMPAN TANGGAL
 // ======================================================
 
-function simpanTanggal() {
+async function simpanTanggal() {
 
     const input =
         document.getElementById(
@@ -1501,21 +1625,61 @@ function simpanTanggal() {
     }
 
 
-    localStorage.setItem(
-        "activeInterviewDate",
-        tanggal
-    );
+    try {
+
+        // SIMPAN KE FIRESTORE AGAR GLOBAL
+        // dan otomatis tersinkron ke semua perangkat.
+        await setDoc(
+            activeDateRef,
+            {
+                activeDate:
+                    tanggal,
+                updatedAt:
+                    new Date().toISOString(),
+                updatedBy:
+                    "ADMIN"
+            },
+            { merge: true }
+        );
 
 
-    tampilkanTanggal();
+        // Update tampilan perangkat admin sekarang juga.
+        setActiveDateCache(
+            tanggal
+        );
 
 
-    tutupTanggal();
+        tutupTanggal();
 
 
-    alert(
-        "Tanggal interview berhasil diubah."
-    );
+        alert(
+            "Tanggal interview berhasil diubah secara global.\n\nSemua perangkat yang membuka sistem akan menggunakan tanggal ini."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "GAGAL SIMPAN TANGGAL GLOBAL:",
+            error
+        );
+
+        if (
+            error.code ===
+            "permission-denied"
+        ) {
+
+            alert(
+                "Tanggal gagal disimpan.\n\nFirestore Rules belum mengizinkan akses ke systemConfig/interviewSettings."
+            );
+
+        } else {
+
+            alert(
+                "Tanggal gagal disimpan.\n\n" +
+                error.message
+            );
+        }
+    }
 }
 
 
