@@ -1,4 +1,8 @@
 // ======================================================
+// DISPLAY QUEUE - SAMSUNG TV AUDIO VERSION
+// ======================================================
+
+// ======================================================
 // FIREBASE
 // ======================================================
 
@@ -51,7 +55,9 @@ const app =
     );
 
 const db =
-    getFirestore(app);
+    getFirestore(
+        app
+    );
 
 
 // ======================================================
@@ -64,34 +70,24 @@ function getTodayKey() {
         new Date();
 
     return (
-
         d.getFullYear() +
-
         "-" +
-
         String(
             d.getMonth() + 1
         ).padStart(
             2,
             "0"
         ) +
-
         "-" +
-
         String(
             d.getDate()
         ).padStart(
             2,
             "0"
         )
-
     );
 }
 
-
-// ======================================================
-// TANGGAL AKTIF
-// ======================================================
 
 const activeDate =
     localStorage.getItem(
@@ -110,25 +106,35 @@ const tanggal =
         "T00:00:00"
     );
 
-document.getElementById(
-    "tanggal"
-).innerText =
-    tanggal.toLocaleDateString(
-        "id-ID",
-        {
-            weekday:
-                "long",
 
-            day:
-                "numeric",
-
-            month:
-                "long",
-
-            year:
-                "numeric"
-        }
+const tanggalElement =
+    document.getElementById(
+        "tanggal"
     );
+
+
+if (
+    tanggalElement
+) {
+
+    tanggalElement.innerText =
+        tanggal.toLocaleDateString(
+            "id-ID",
+            {
+                weekday:
+                    "long",
+
+                day:
+                    "numeric",
+
+                month:
+                    "long",
+
+                year:
+                    "numeric"
+            }
+        );
+}
 
 
 // ======================================================
@@ -140,20 +146,24 @@ const callingScreen =
         "callingScreen"
     );
 
+
 const waitingScreen =
     document.getElementById(
         "waitingScreen"
     );
+
 
 const nomorAntrian =
     document.getElementById(
         "nomorAntrian"
     );
 
-const namaInterviewer =
+
+const nomorMeja =
     document.getElementById(
-        "namaInterviewer"
+        "nomorMeja"
     );
+
 
 const soundButton =
     document.getElementById(
@@ -162,7 +172,15 @@ const soundButton =
 
 
 // ======================================================
-// SOUND STATE
+// AUDIO ENGINE
+// ======================================================
+//
+// TIDAK menggunakan speechSynthesis.
+//
+// Menggunakan HTMLAudioElement + Google Translate TTS.
+// Cara ini lebih cocok untuk browser TV yang tidak mempunyai
+// Web Speech API / speechSynthesis yang berfungsi.
+//
 // ======================================================
 
 let soundEnabled =
@@ -171,294 +189,57 @@ let soundEnabled =
     ) === "true";
 
 
-// ======================================================
-// VOICE STATE
-// ======================================================
-
-// Daftar voice browser / TV
-let availableVoices = [];
+let audioElement =
+    new Audio();
 
 
-// Voice Indonesia yang akan dipakai
-let indonesianVoice = null;
+audioElement.preload =
+    "auto";
 
 
-// Menandai apakah sistem suara sudah dipersiapkan
-let speechReady = false;
+audioElement.volume =
+    1.0;
 
 
 // ======================================================
-// EVENT PANGGILAN TERAKHIR
+// AUDIO UNLOCK
 // ======================================================
 //
-// Format:
+// Audio harus "dibuka" oleh interaksi user terlebih dahulu.
+// Samsung TV biasanya lebih menerima audio HTML setelah
+// user menekan tombol.
 //
-// candidateId + "|" + waktuEvent
-//
-// Untuk panggilan pertama:
-// waktuEvent = waktuMulai
-//
-// Untuk PANGGIL ULANG:
-// waktuEvent = waktuPanggilUlang
-//
+// ======================================================
+
+let audioUnlocked =
+    false;
+
+
+let audioQueue =
+    [];
+
+
+let audioPlaying =
+    false;
+
+
+// ======================================================
+// LAST CALL EVENT
 // ======================================================
 
 let lastCallEvent =
     localStorage.getItem(
         "lastCallEvent"
-    ) || "";
+    ) ||
+    "";
 
 
 // ======================================================
-// BERSIHKAN KEY LAMA
-// ======================================================
-
-localStorage.removeItem(
-    "lastCalledCandidateId"
-);
-
-
-// ======================================================
-// UPDATE BUTTON
+// UPDATE SOUND BUTTON
 // ======================================================
 
 updateSoundButton();
 
-
-// ======================================================
-// LOAD VOICE
-// ======================================================
-
-function loadVoices() {
-
-    if (
-        !(
-            "speechSynthesis"
-            in window
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    availableVoices =
-        window.speechSynthesis
-            .getVoices();
-
-
-    if (
-        !availableVoices ||
-        availableVoices.length === 0
-    ) {
-
-        speechReady = false;
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // CARI VOICE INDONESIA
-    // ==================================================
-
-    indonesianVoice =
-        availableVoices.find(
-            function(voice) {
-
-                return (
-                    voice.lang &&
-                    voice.lang
-                        .toLowerCase()
-                        .startsWith(
-                            "id"
-                        )
-                );
-
-            }
-        ) || null;
-
-
-    // ==================================================
-    // JIKA TIDAK ADA VOICE INDONESIA
-    // CARI VOICE YANG MENDUKUNG id-ID
-    // ==================================================
-
-    if (
-        !indonesianVoice
-    ) {
-
-        indonesianVoice =
-            availableVoices.find(
-                function(voice) {
-
-                    return (
-                        voice.lang &&
-                        voice.lang
-                            .toLowerCase()
-                            .includes(
-                                "id-id"
-                            )
-                    );
-
-                }
-            ) || null;
-
-    }
-
-
-    // ==================================================
-    // VOICE SUDAH SIAP
-    // ==================================================
-
-    speechReady = true;
-
-}
-
-
-// ======================================================
-// VOICE BERUBAH / SELESAI LOADING
-// ======================================================
-
-if (
-    "speechSynthesis"
-    in window
-) {
-
-    window.speechSynthesis
-        .addEventListener(
-            "voiceschanged",
-            function() {
-
-                loadVoices();
-
-            }
-        );
-
-
-    // Coba load langsung
-    loadVoices();
-
-
-    // Coba lagi setelah browser selesai loading
-    setTimeout(
-        function() {
-
-            loadVoices();
-
-        },
-        500
-    );
-
-
-    setTimeout(
-        function() {
-
-            loadVoices();
-
-        },
-        1500
-    );
-
-}
-
-
-// ======================================================
-// AKTIFKAN SUARA
-// ======================================================
-
-window.aktifkanSuara =
-    aktifkanSuara;
-
-
-function aktifkanSuara() {
-
-    // ==================================================
-    // CEK SUPPORT
-    // ==================================================
-
-    if (
-        !(
-            "speechSynthesis"
-            in window
-        )
-    ) {
-
-        alert(
-            "Browser TV ini tidak mendukung fitur suara otomatis."
-        );
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // LOAD VOICE
-    // ==================================================
-
-    loadVoices();
-
-
-    // ==================================================
-    // AKTIFKAN
-    // ==================================================
-
-    soundEnabled =
-        true;
-
-
-    localStorage.setItem(
-        "displaySoundEnabled",
-        "true"
-    );
-
-
-    updateSoundButton();
-
-
-    // ==================================================
-    // RESUME SPEECH ENGINE
-    // ==================================================
-
-    try {
-
-        window.speechSynthesis
-            .resume();
-
-    } catch (error) {
-
-        console.warn(
-            "Speech resume error:",
-            error
-        );
-
-    }
-
-
-    // ==================================================
-    // TEST / PRIME SUARA
-    // ==================================================
-
-    setTimeout(
-        function() {
-
-            speak(
-                "Sistem panggilan interview telah aktif."
-            );
-
-        },
-        100
-    );
-
-}
-
-
-// ======================================================
-// UPDATE BUTTON SUARA
-// ======================================================
 
 function updateSoundButton() {
 
@@ -467,7 +248,6 @@ function updateSoundButton() {
     ) {
 
         return;
-
     }
 
 
@@ -498,9 +278,100 @@ function updateSoundButton() {
         soundButton.classList.add(
             "disabled"
         );
+    }
+}
 
+
+// ======================================================
+// AKTIFKAN SUARA
+// ======================================================
+
+window.aktifkanSuara =
+    aktifkanSuara;
+
+
+function aktifkanSuara() {
+
+    soundEnabled =
+        true;
+
+
+    localStorage.setItem(
+        "displaySoundEnabled",
+        "true"
+    );
+
+
+    updateSoundButton();
+
+
+    // ==================================================
+    // UNLOCK AUDIO
+    // ==================================================
+
+    audioUnlocked =
+        true;
+
+
+    // Audio pendek / kosong untuk membuka izin audio.
+    // Setelah user menekan tombol, browser TV biasanya
+    // mengizinkan audio berikutnya diputar.
+    try {
+
+        audioElement.pause();
+
+        audioElement.currentTime =
+            0;
+
+        audioElement.src =
+            "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAA";
+
+        const promise =
+            audioElement.play();
+
+        if (
+            promise &&
+            typeof promise.catch ===
+                "function"
+        ) {
+
+            promise.catch(
+                function(error) {
+
+                    console.log(
+                        "Audio unlock:",
+                        error
+                    );
+
+                }
+            );
+        }
+
+    } catch (
+        error
+    ) {
+
+        console.log(
+            "Audio unlock error:",
+            error
+        );
     }
 
+
+    // ==================================================
+    // TEST SUARA
+    // ==================================================
+
+    setTimeout(
+        function() {
+
+            playTTS(
+                "Sistem panggilan interview telah aktif."
+            );
+
+        },
+        300
+    );
 }
 
 
@@ -537,15 +408,17 @@ onSnapshot(
 
 
         snapshot.forEach(
-            function(docSnapshot) {
+            function(
+                docSnapshot
+            ) {
 
                 const data =
                     docSnapshot.data();
 
 
-                // ==========================================
-                // HANYA KANDIDAT YANG SEDANG INTERVIEW
-                // ==========================================
+                // ======================================
+                // HANYA YANG SEDANG INTERVIEW
+                // ======================================
 
                 if (
                     data.status ===
@@ -558,18 +431,15 @@ onSnapshot(
                             docSnapshot.id,
 
                         ...data
-
                     });
-
                 }
-
             }
         );
 
 
-        // ==================================================
+        // ==========================================
         // TIDAK ADA PANGGILAN
-        // ==================================================
+        // ==========================================
 
         if (
             activeCandidates.length ===
@@ -579,37 +449,35 @@ onSnapshot(
             tampilkanWaiting();
 
             return;
-
         }
 
 
-        // ==================================================
-        // URUTKAN BERDASARKAN WAKTU MULAI
-        // YANG PALING BARU DI ATAS
-        // ==================================================
+        // ==========================================
+        // URUTKAN EVENT TERBARU
+        // ==========================================
 
         activeCandidates.sort(
-            function(a, b) {
+            function(
+                a,
+                b
+            ) {
 
                 const timeA =
-                    new Date(
-                        a.waktuMulai ||
-                        0
-                    ).getTime();
+                    getLastCallTime(
+                        a
+                    );
 
 
                 const timeB =
-                    new Date(
-                        b.waktuMulai ||
-                        0
-                    ).getTime();
+                    getLastCallTime(
+                        b
+                    );
 
 
                 return (
                     timeB -
                     timeA
                 );
-
             }
         );
 
@@ -621,9 +489,7 @@ onSnapshot(
         tampilkanPanggilan(
             current
         );
-
     },
-
 
     function(error) {
 
@@ -631,10 +497,276 @@ onSnapshot(
             "Display error:",
             error
         );
+    }
+);
+
+
+// ======================================================
+// GET LAST CALL TIME
+// ======================================================
+
+function getLastCallTime(
+    candidate
+) {
+
+    const tahap =
+        Number(
+            candidate.tahapInterview ||
+            1
+        );
+
+
+    // ==================================================
+    // INTERVIEW 2
+    // ==================================================
+
+    if (
+        tahap === 2
+    ) {
+
+        if (
+            candidate.waktuPanggilUlangTahap2
+        ) {
+
+            const time =
+                new Date(
+                    candidate
+                        .waktuPanggilUlangTahap2
+                ).getTime();
+
+
+            if (
+                !isNaN(
+                    time
+                )
+            ) {
+
+                return time;
+            }
+        }
+
+
+        if (
+            candidate.waktuMulaiTahap2
+        ) {
+
+            const time =
+                new Date(
+                    candidate
+                        .waktuMulaiTahap2
+                ).getTime();
+
+
+            if (
+                !isNaN(
+                    time
+                )
+            ) {
+
+                return time;
+            }
+        }
+    }
+
+
+    // ==================================================
+    // INTERVIEW 1
+    // ==================================================
+
+    if (
+        candidate.waktuPanggilUlang
+    ) {
+
+        const time =
+            new Date(
+                candidate
+                    .waktuPanggilUlang
+            ).getTime();
+
+
+        if (
+            !isNaN(
+                time
+            )
+        ) {
+
+            return time;
+        }
+    }
+
+
+    if (
+        candidate.waktuMulai
+    ) {
+
+        const time =
+            new Date(
+                candidate.waktuMulai
+            ).getTime();
+
+
+        if (
+            !isNaN(
+                time
+            )
+        ) {
+
+            return time;
+        }
+    }
+
+
+    return 0;
+}
+
+
+// ======================================================
+// GET NOMOR MEJA AKTIF
+// ======================================================
+
+function getNomorMejaAktif(
+    candidate
+) {
+
+    const tahap =
+        Number(
+            candidate.tahapInterview ||
+            1
+        );
+
+
+    const kandidatMeja =
+        tahap === 2
+
+            ? [
+
+                candidate.nomorMejaTahap2,
+
+                candidate.nomorMeja,
+
+                candidate.nomorMejaTahap1,
+
+                candidate.nomorMeja2,
+
+                candidate.mejaTahap2,
+
+                candidate.mejaInterview2,
+
+                candidate.meja,
+
+                candidate.desk
+
+            ]
+
+            : [
+
+                candidate.nomorMejaTahap1,
+
+                candidate.nomorMeja,
+
+                candidate.nomorMeja1,
+
+                candidate.mejaTahap1,
+
+                candidate.mejaInterview1,
+
+                candidate.meja,
+
+                candidate.desk
+            ];
+
+
+    const meja =
+        kandidatMeja.find(
+            function(value) {
+
+                return (
+                    value !==
+                        undefined &&
+
+                    value !==
+                        null &&
+
+                    String(
+                        value
+                    ).trim() !==
+                        ""
+                );
+            }
+        );
+
+
+    return String(
+        meja ||
+        ""
+    ).trim();
+}
+
+
+// ======================================================
+// GET CALL EVENT
+// ======================================================
+
+function getCallEvent(
+    candidate
+) {
+
+    const tahap =
+        Number(
+            candidate.tahapInterview ||
+            1
+        );
+
+
+    let waktuEvent =
+        "";
+
+
+    // ==================================================
+    // TAHAP 2
+    // ==================================================
+
+    if (
+        tahap === 2
+    ) {
+
+        waktuEvent =
+            candidate.waktuPanggilUlangTahap2 ||
+
+            candidate.waktuMulaiTahap2 ||
+
+            candidate.waktuMulai ||
+
+            "";
 
     }
 
-);
+
+    // ==================================================
+    // TAHAP 1
+    // ==================================================
+
+    else {
+
+        waktuEvent =
+            candidate.waktuPanggilUlang ||
+
+            candidate.waktuMulai ||
+
+            "";
+    }
+
+
+    return (
+        candidate.id +
+        "|" +
+        tahap +
+        "|" +
+        String(
+            waktuEvent
+        )
+    );
+}
 
 
 // ======================================================
@@ -650,60 +782,132 @@ function tampilkanPanggilan(
         "-";
 
 
-    const interviewer =
-        formatNamaInterviewer(
-            candidate.interviewer
+    const meja =
+        getNomorMejaAktif(
+            candidate
+        ) ||
+        "-";
+
+
+    // ==================================================
+    // UPDATE NOMOR KANDIDAT
+    // ==================================================
+
+    if (
+        nomorAntrian
+    ) {
+
+        nomorAntrian.innerText =
+            nomor;
+    }
+
+
+    // ==================================================
+    // UPDATE NOMOR MEJA
+    // ==================================================
+
+    if (
+        nomorMeja
+    ) {
+
+        nomorMeja.innerText =
+            meja ===
+                "-"
+                ? "MEJA BELUM DITENTUKAN"
+                : "MEJA " +
+                    meja;
+    }
+
+
+    // ==================================================
+    // TAMPILKAN CALLING SCREEN
+    // ==================================================
+
+    if (
+        waitingScreen
+    ) {
+
+        waitingScreen.style.display =
+            "none";
+    }
+
+
+    if (
+        callingScreen
+    ) {
+
+        callingScreen.style.display =
+            "block";
+    }
+
+
+    // ==================================================
+    // TAHAP
+    // ==================================================
+
+    const tahapAktif =
+        Number(
+            candidate.tahapInterview ||
+            1
         );
 
 
     // ==================================================
-    // UPDATE LAYAR
+    // WARNA INTERVIEW 2
     // ==================================================
 
-    nomorAntrian.innerText =
-        nomor;
+    if (
+        nomorAntrian
+    ) {
+
+        if (
+            tahapAktif ===
+            2
+        ) {
+
+            nomorAntrian.style.color =
+                "#f28c28";
+
+        } else {
+
+            nomorAntrian.style.color =
+                "";
+        }
+    }
 
 
-    namaInterviewer.innerText =
-        interviewer;
+    if (
+        nomorMeja
+    ) {
 
+        if (
+            tahapAktif ===
+            2
+        ) {
 
-    waitingScreen.style.display =
-        "none";
+            nomorMeja.style.color =
+                "#f28c28";
 
+        } else {
 
-    callingScreen.style.display =
-        "block";
+            nomorMeja.style.color =
+                "";
+        }
+    }
 
 
     // ==================================================
-    // DETEKSI EVENT PANGGILAN
+    // EVENT
     // ==================================================
-    //
-    // Panggilan pertama:
-    // waktuEvent = waktuMulai
-    //
-    // Panggil ulang:
-    // waktuEvent = waktuPanggilUlang
-    //
-    // ==================================================
-
-    const waktuEvent =
-        candidate.waktuPanggilUlang ||
-        candidate.waktuMulai ||
-        "";
-
 
     const callEvent =
-        candidate.id +
-        "|" +
-        String(
-            waktuEvent
+        getCallEvent(
+            candidate
         );
 
 
     // ==================================================
-    // CEK APAKAH INI PANGGILAN BARU
+    // JANGAN BUNYIKAN EVENT YANG SAMA
     // ==================================================
 
     if (
@@ -721,10 +925,6 @@ function tampilkanPanggilan(
         );
 
 
-        // ==================================================
-        // JALANKAN SUARA
-        // ==================================================
-
         if (
             soundEnabled
         ) {
@@ -734,17 +934,14 @@ function tampilkanPanggilan(
 
                     speakCall(
                         nomor,
-                        interviewer
+                        meja
                     );
 
                 },
                 300
             );
-
         }
-
     }
-
 }
 
 
@@ -754,360 +951,438 @@ function tampilkanPanggilan(
 
 function tampilkanWaiting() {
 
-    callingScreen.style.display =
-        "none";
+    if (
+        callingScreen
+    ) {
+
+        callingScreen.style.display =
+            "none";
+    }
 
 
-    waitingScreen.style.display =
-        "block";
+    if (
+        waitingScreen
+    ) {
 
+        waitingScreen.style.display =
+            "block";
+    }
 }
 
 
 // ======================================================
-// FORMAT NAMA INTERVIEWER
-// ======================================================
-//
-// Tidak ada deteksi gender.
-//
-// Apa pun nama yang diisi interviewer:
-//
-// Ahmad Fauzan
-//
-// akan tampil:
-//
-// Bpk/Ibu. Ahmad Fauzan
-//
+// BERSIHKAN TEKS UNTUK TTS
 // ======================================================
 
-function formatNamaInterviewer(
-    nama
+function cleanSpeechText(
+    text
 ) {
 
-    if (
-        !nama
-    ) {
+    return String(
+        text || ""
+    )
+        .replace(
+            /-/g,
+            " "
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
+}
 
-        return "-";
 
-    }
+// ======================================================
+// KONVERSI NOMOR KANDIDAT
+// ======================================================
+//
+// A-001
+//
+// dibaca:
+// A 001
+//
+// Supaya TTS tidak membaca "A strip nol nol satu".
+//
+// ======================================================
+
+function formatNomorUntukSuara(
+    nomor
+) {
+
+    let text =
+        cleanSpeechText(
+            nomor
+        );
 
 
-    const cleanName =
-        nama.trim();
+    text =
+        text.replace(
+            /A\s+(\d+)/gi,
+            "A $1"
+        );
 
 
-    return (
-        "Bpk/Ibu. " +
-        cleanName
-    );
+    text =
+        text.replace(
+            /B\s+(\d+)/gi,
+            "B $1"
+        );
 
+
+    text =
+        text.replace(
+            /C\s+(\d+)/gi,
+            "C $1"
+        );
+
+
+    text =
+        text.replace(
+            /D\s+(\d+)/gi,
+            "D $1"
+        );
+
+
+    return text;
 }
 
 
 // ======================================================
 // SUARA PANGGILAN
 // ======================================================
-//
-// Tampilan:
-//
-// Bpk/Ibu. Ahmad Fauzan
-//
-// Suara:
-//
-// "Nomor antrean A 027,
-//  silakan menuju interviewer,
-//  Bapak atau Ibu Ahmad Fauzan."
-//
-// ======================================================
 
 function speakCall(
     nomor,
-    interviewer
+    nomorMejaAktif
 ) {
 
-    // ==================================================
-    // NOMOR ANTREAN
-    // ==================================================
-    //
-    // A-027
-    //
-    // menjadi:
-    //
-    // A 027
-    //
-    // ==================================================
-
     const nomorSpeech =
-        String(
+        formatNomorUntukSuara(
             nomor
-        ).replace(
-            /-/g,
-            " "
+        );
+
+
+    const meja =
+        cleanSpeechText(
+            nomorMejaAktif
         );
 
 
     // ==================================================
-    // HAPUS "Bpk/Ibu."
-    // DARI NAMA UNTUK SUARA
+    // KALIMAT SINGKAT
     // ==================================================
 
-    const namaAsli =
-        interviewer.replace(
-            /^Bpk\/Ibu\.\s*/i,
-            ""
-        );
+    let text =
+        "Nomor kandidat " +
+        nomorSpeech;
 
 
-    // ==================================================
-    // KALIMAT SUARA
-    // ==================================================
+    if (
+        meja &&
+        meja !== "-"
+    ) {
 
-    const text =
-        "Nomor antrean " +
-        nomorSpeech +
-        ", silakan menuju interviewer, " +
-        "Bapak atau Ibu " +
-        namaAsli +
-        ".";
+        text +=
+            ", silakan ke meja nomor " +
+            meja +
+            ".";
+
+    } else {
+
+        text +=
+            ", silakan menunggu.";
+    }
 
 
-    // ==================================================
-    // JALANKAN
-    // ==================================================
-
-    speak(
+    playTTS(
         text
     );
-
 }
 
 
 // ======================================================
-// TEXT TO SPEECH
+// GOOGLE TTS URL
+// ======================================================
+//
+// Tidak menggunakan speechSynthesis.
+//
+// Audio diambil sebagai MP3 dari Google Translate TTS.
+//
 // ======================================================
 
-function speak(
+function createTTSUrl(
     text
 ) {
 
-    // ==================================================
-    // CEK SUPPORT
-    // ==================================================
-
-    if (
-        !(
-            "speechSynthesis"
-            in window
-        )
-    ) {
-
-        console.warn(
-            "SpeechSynthesis tidak tersedia."
-        );
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // LOAD VOICE TERLEBIH DAHULU
-    // ==================================================
-
-    loadVoices();
-
-
-    // ==================================================
-    // HENTIKAN SUARA SEBELUMNYA
-    // ==================================================
-
-    try {
-
-        window.speechSynthesis
-            .cancel();
-
-    } catch (error) {
-
-        console.warn(
-            "Speech cancel error:",
-            error
-        );
-
-    }
-
-
-    // ==================================================
-    // RESUME ENGINE
-    // ==================================================
-
-    try {
-
-        window.speechSynthesis
-            .resume();
-
-    } catch (error) {
-
-        console.warn(
-            "Speech resume error:",
-            error
-        );
-
-    }
-
-
-    // ==================================================
-    // BUAT UTTERANCE
-    // ==================================================
-
-    const utterance =
-        new SpeechSynthesisUtterance(
+    const encodedText =
+        encodeURIComponent(
             text
         );
 
 
-    // ==================================================
-    // BAHASA INDONESIA
-    // ==================================================
-
-    utterance.lang =
-        "id-ID";
-
-
-    // ==================================================
-    // PILIH VOICE INDONESIA
-    // ==================================================
-
-    if (
-        indonesianVoice
-    ) {
-
-        utterance.voice =
-            indonesianVoice;
-
-    }
-
-
-    // ==================================================
-    // KECEPATAN
-    // ==================================================
-
-    utterance.rate =
-        0.85;
-
-
-    // ==================================================
-    // PITCH
-    // ==================================================
-
-    utterance.pitch =
-        1;
-
-
-    // ==================================================
-    // VOLUME
-    // ==================================================
-
-    utterance.volume =
-        1;
-
-
-    // ==================================================
-    // EVENT DEBUG
-    // ==================================================
-
-    utterance.onstart =
-        function() {
-
-            console.log(
-                "🔊 Suara mulai:",
-                text
-            );
-
-        };
-
-
-    utterance.onend =
-        function() {
-
-            console.log(
-                "🔊 Suara selesai."
-            );
-
-        };
-
-
-    utterance.onerror =
-        function(event) {
-
-            console.error(
-                "🔊 Speech error:",
-                event
-            );
-
-        };
-
-
-    // ==================================================
-    // JALANKAN SUARA
-    // ==================================================
-
-    try {
-
-        window.speechSynthesis
-            .speak(
-                utterance
-            );
-
-    } catch (error) {
-
-        console.error(
-            "Gagal menjalankan suara:",
-            error
-        );
-
-    }
-
+    return (
+        "https://translate.google.com/translate_tts" +
+        "?ie=UTF-8" +
+        "&tl=id" +
+        "&client=tw-ob" +
+        "&q=" +
+        encodedText
+    );
 }
 
 
 // ======================================================
-// AUTO RESTORE SOUND
+// PLAY TTS
 // ======================================================
-//
-// Kalau TV sebelumnya sudah pernah menekan
-// "AKTIFKAN SUARA", status tetap tersimpan.
-//
-// Namun browser TV tetap akan mencoba menyiapkan
-// speech engine saat halaman dibuka.
-//
+
+function playTTS(
+    text
+) {
+
+    if (
+        !soundEnabled
+    ) {
+
+        return;
+    }
+
+
+    if (
+        !text
+    ) {
+
+        return;
+    }
+
+
+    audioQueue.push(
+        text
+    );
+
+
+    processAudioQueue();
+}
+
+
+// ======================================================
+// AUDIO QUEUE
+// ======================================================
+
+function processAudioQueue() {
+
+    if (
+        audioPlaying
+    ) {
+
+        return;
+    }
+
+
+    if (
+        audioQueue.length ===
+        0
+    ) {
+
+        return;
+    }
+
+
+    if (
+        !audioUnlocked
+    ) {
+
+        console.log(
+            "Audio belum di-unlock. Tekan AKTIFKAN SUARA."
+        );
+
+        return;
+    }
+
+
+    const text =
+        audioQueue.shift();
+
+
+    audioPlaying =
+        true;
+
+
+    const url =
+        createTTSUrl(
+            text
+        );
+
+
+    try {
+
+        audioElement.pause();
+
+        audioElement.currentTime =
+            0;
+
+        audioElement.src =
+            url;
+
+
+        audioElement.onended =
+            function() {
+
+                audioPlaying =
+                    false;
+
+
+                setTimeout(
+                    function() {
+
+                        processAudioQueue();
+
+                    },
+                    100
+                );
+            };
+
+
+        audioElement.onerror =
+            function(error) {
+
+                console.error(
+                    "Audio TTS gagal:",
+                    error
+                );
+
+
+                audioPlaying =
+                    false;
+
+
+                setTimeout(
+                    function() {
+
+                        processAudioQueue();
+
+                    },
+                    200
+                );
+            };
+
+
+        const playPromise =
+            audioElement.play();
+
+
+        if (
+            playPromise &&
+            typeof playPromise.catch ===
+                "function"
+        ) {
+
+            playPromise.catch(
+                function(error) {
+
+                    console.error(
+                        "Audio tidak dapat diputar:",
+                        error
+                    );
+
+
+                    audioPlaying =
+                        false;
+
+
+                    // ==================================
+                    // JIKA AUTOPLAY DITOLAK
+                    // ==================================
+
+                    audioQueue.unshift(
+                        text
+                    );
+
+
+                    setTimeout(
+                        function() {
+
+                            processAudioQueue();
+
+                        },
+                        1000
+                    );
+                }
+            );
+        }
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Audio error:",
+            error
+        );
+
+
+        audioPlaying =
+            false;
+
+
+        setTimeout(
+            function() {
+
+                processAudioQueue();
+
+            },
+            500
+        );
+    }
+}
+
+
+// ======================================================
+// EVENT SOUND BUTTON
 // ======================================================
 
 if (
-    soundEnabled &&
-    (
-        "speechSynthesis"
-        in window
-    )
+    soundButton
 ) {
 
-    // Load voice
-    loadVoices();
+    soundButton.addEventListener(
+        "click",
+        function() {
+
+            aktifkanSuara();
+
+        }
+    );
+}
 
 
-    // Resume engine
-    try {
+// ======================================================
+// GLOBAL FUNCTIONS
+// ======================================================
 
-        window.speechSynthesis
-            .resume();
+window.playTTS =
+    playTTS;
 
-    } catch (error) {
 
-        console.warn(
-            "Auto resume error:",
-            error
-        );
+window.speakCall =
+    speakCall;
+
+
+window.aktifkanSuara =
+    aktifkanSuara;
+
+
+// ======================================================
+// INITIALIZE
+// ======================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        updateSoundButton();
+
+        tampilkanWaiting();
 
     }
-
-}
+);
