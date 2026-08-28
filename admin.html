@@ -482,48 +482,7 @@
             }
         }
 
-    
-        /* ==================================================
-           TAB INTERVIEW
-           ================================================== */
-        .interview-tabs {
-            display:flex;
-            gap:10px;
-            margin:0 0 18px 0;
-            background:#fff;
-            padding:6px;
-            border-radius:12px;
-            box-shadow:0 2px 10px rgba(0,0,0,.06);
-        }
-
-        .interview-tab {
-            flex:1;
-            border:0;
-            background:#f3f4f6;
-            color:#555;
-            padding:13px 18px;
-            border-radius:9px;
-            font-size:14px;
-            font-weight:700;
-            cursor:pointer;
-            transition:.2s;
-        }
-
-        .interview-tab:hover {
-            background:#e9eaec;
-        }
-
-        .interview-tab.active {
-            background:#111827;
-            color:#fff;
-        }
-
-        .tab-description {
-            margin:-8px 0 18px;
-            color:#666;
-            font-size:13px;
-        }
-</style>
+    </style>
 
 </head>
 
@@ -556,35 +515,6 @@
 <main class="container">
 
     <!-- ==================================================
-         INTERVIEW TABS
-         ================================================== -->
-
-    <div class="interview-tabs">
-
-        <button type="button" class="interview-tab active" id="tabAdminAll" onclick="gantiTabInterview('all')">
-            ALL
-        </button>
-
-        <button type="button" class="interview-tab" id="tabAdminOrganik" onclick="gantiTabInterview('organik')">
-            ORGANIK
-        </button>
-
-        <button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
-            BIBIT
-        </button>
-
-        <button type="button" class="interview-tab" id="tabAdminTad" onclick="gantiTabInterview('tad')">
-            TAD
-        </button>
-
-    </div>
-
-    <div class="tab-description" id="tabDescription">
-        Rekap keseluruhan seluruh peserta interview.
-    </div>
-
-
-    <!-- ==================================================
          FILTER
          ================================================== -->
 
@@ -599,12 +529,12 @@
             <div class="field">
 
                 <label>
-                    Tanggal Mulai
+                    Tanggal
                 </label>
 
                 <input
                     type="date"
-                    id="filterTanggalMulai"
+                    id="filterTanggal"
                 >
 
             </div>
@@ -613,21 +543,7 @@
             <div class="field">
 
                 <label>
-                    Tanggal Sampai
-                </label>
-
-                <input
-                    type="date"
-                    id="filterTanggalSelesai"
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    Cari Nama / Nomor Kandidat
+                    Cari Nama / Nomor Antrean
                 </label>
 
                 <input
@@ -655,6 +571,10 @@
                         Menunggu
                     </option>
 
+                    <option value="Menunggu Interview 2">
+                        Menunggu Interview 2
+                    </option>
+
                     <option value="Sedang Interview">
                         Sedang Interview
                     </option>
@@ -667,14 +587,29 @@
 
             </div>
 
+
             <div class="field">
-                <label>Kategori</label>
-                <select id="filterKategori">
-                    <option value="">Semua Kategori</option>
-                    <option value="organik">Organik</option>
-                    <option value="bibit">Bibit</option>
-                    <option value="tad">TAD</option>
+
+                <label>
+                    Tahap Interview
+                </label>
+
+                <select id="filterTahap">
+
+                    <option value="">
+                        Semua Tahap
+                    </option>
+
+                    <option value="1">
+                        Interview 1
+                    </option>
+
+                    <option value="2">
+                        Interview 2
+                    </option>
+
                 </select>
+
             </div>
 
 
@@ -690,12 +625,8 @@
                         Semua Hasil
                     </option>
 
-                    <option value="Disarankan">
-                        Disarankan
-                    </option>
-
-                    <option value="Dipertimbangkan">
-                        Dipertimbangkan
+                    <option value="Direkomendasikan">
+                        Direkomendasikan
                     </option>
 
                     <option value="Tidak Direkomendasikan">
@@ -897,8 +828,9 @@
 
 
             <button
+                type="button"
+                id="btnImportBSP"
                 class="btn-primary"
-                onclick="importBSPExcel()"
             >
                 IMPORT / UPDATE BSP
             </button>
@@ -927,48 +859,146 @@
     <section class="stats">
 
         <div class="stat">
-            <div class="stat-label">Total Kandidat</div>
-            <div class="stat-number" id="statTotal">0</div>
+
+            <div class="stat-label">
+                Total Kandidat
+            </div>
+
+            <div
+                class="stat-number"
+                id="statTotal"
+            >
+                0
+            </div>
+
         </div>
 
-        <div class="stat">
-            <div class="stat-label">Menunggu</div>
-            <div class="stat-number" id="statMenunggu">0</div>
-        </div>
 
         <div class="stat">
-            <div class="stat-label">Sedang Interview</div>
-            <div class="stat-number" id="statInterview">0</div>
+
+            <div class="stat-label">
+                Menunggu Interview 1
+            </div>
+
+            <div
+                class="stat-number"
+                id="statMenunggu"
+            >
+                0
+            </div>
+
         </div>
 
-        <div class="stat">
-            <div class="stat-label">Selesai</div>
-            <div class="stat-number" id="statSelesai">0</div>
-        </div>
 
         <div class="stat">
-            <div class="stat-label">Disarankan</div>
-            <div class="stat-number" id="statRecommended">0</div>
+
+            <div class="stat-label">
+                Menunggu Interview 2
+            </div>
+
+            <div
+                class="stat-number"
+                id="statMenunggu2"
+            >
+                0
+            </div>
+
         </div>
 
-        <div class="stat">
-            <div class="stat-label">Dipertimbangkan</div>
-            <div class="stat-number" id="statConsidered">0</div>
-        </div>
 
         <div class="stat">
-            <div class="stat-label">Tidak Direkomendasikan</div>
-            <div class="stat-number" id="statNotRecommended">0</div>
+
+            <div class="stat-label">
+                Sedang Interview 1
+            </div>
+
+            <div
+                class="stat-number"
+                id="statInterview"
+            >
+                0
+            </div>
+
         </div>
 
-        <div class="stat">
-            <div class="stat-label">Setuju</div>
-            <div class="stat-number" id="statSetuju2">0</div>
-        </div>
 
         <div class="stat">
-            <div class="stat-label">Tidak Setuju</div>
-            <div class="stat-number" id="statTidakSetuju2">0</div>
+
+            <div class="stat-label">
+                Sedang Interview 2
+            </div>
+
+            <div
+                class="stat-number"
+                id="statInterview2"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Selesai Final
+            </div>
+
+            <div
+                class="stat-number"
+                id="statSelesai"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Direkomendasikan I1
+            </div>
+
+            <div
+                class="stat-number"
+                id="statRecommended"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Setuju I2
+            </div>
+
+            <div
+                class="stat-number"
+                id="statSetuju2"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Tidak Direkomendasikan I1
+            </div>
+
+            <div
+                class="stat-number"
+                id="statNotRecommended"
+            >
+                0
+            </div>
+
         </div>
 
     </section>
@@ -978,7 +1008,7 @@
          SUMMARY
          ================================================== -->
 
-    <section class="summary-grid" id="summarySection">
+    <section class="summary-grid">
 
         <div class="summary-card">
 
@@ -1054,7 +1084,7 @@
                         </th>
 
                         <th>
-                            Nomor Kandidat
+                            Antrean
                         </th>
 
                         <th>
