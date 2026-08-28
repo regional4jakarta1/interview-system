@@ -525,8 +525,6 @@ window.terapkanFilter =
 
 function terapkanFilter() {
 
-    function terapkanFilter() {
-
     const getFilterValue = (id) => {
         const el = document.getElementById(id);
         return el ? el.value.trim().toLowerCase() : "";
