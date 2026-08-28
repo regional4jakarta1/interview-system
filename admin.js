@@ -69,119 +69,185 @@ let allCandidates =
 let filteredCandidates =
     [];
 
+// ======================================================
+// ======================================================
+// TAB REKAP ADMIN
+// ======================================================
+
+let activeInterviewTab = "all";
+
+window.gantiTabInterview = gantiTabInterview;
+
+function getAdminCategory(candidate) {
+    const jabatan = String(candidate.rekomendasiJabatan || "").trim();
+
+    if (jabatan === "FL Organik" || jabatan === "Sales Organik") return "organik";
+    if (jabatan === "FL Bibit") return "bibit";
+    if (jabatan === "Sales TAD") return "tad";
+    return "other";
+}
+
+function gantiTabInterview(tab) {
+    const allowed = ["all", "organik", "bibit", "tad"];
+    activeInterviewTab = allowed.includes(String(tab)) ? String(tab) : "all";
+
+    const buttons = {
+        all: document.getElementById("tabAdminAll"),
+        organik: document.getElementById("tabAdminOrganik"),
+        bibit: document.getElementById("tabAdminBibit"),
+        tad: document.getElementById("tabAdminTad")
+    };
+
+    Object.entries(buttons).forEach(([key, el]) => {
+        if (!el) return;
+        const active = key === activeInterviewTab;
+        el.classList.toggle("active", active);
+    });
+
+    const description = document.getElementById("tabDescription");
+    if (description) {
+        description.innerText = {
+            all: "Rekap keseluruhan seluruh peserta interview.",
+            organik: "Rekap kandidat dengan rekomendasi FL Organik dan Sales Organik.",
+            bibit: "Rekap kandidat dengan rekomendasi FL Bibit.",
+            tad: "Rekap kandidat dengan rekomendasi Sales TAD."
+        }[activeInterviewTab];
+    }
+
+    // Sinkronkan dropdown kategori dengan tab aktif.
+    const filterKategori = document.getElementById("filterKategori");
+    if (filterKategori) {
+        filterKategori.value = activeInterviewTab === "all" ? "" : activeInterviewTab;
+    }
+
+    // Semua statistik tetap tampil; nilainya mengikuti tab aktif.
+    document.querySelectorAll(".stat[data-tab]").forEach(card => {
+        card.style.display = "";
+    });
+
+    terapkanFilter();
+}
+
+function isInterview1Candidate(candidate) {
+    return Boolean(
+        candidate.interview1Final === true ||
+        candidate.interviewerTahap1 ||
+        candidate.waktuMulai ||
+        candidate.waktuSubmitTahap1 ||
+        candidate.hasil ||
+        candidate.scorePenampilan != null ||
+        candidate.scoreMotivasi != null ||
+        candidate.scoreKomunikasi != null ||
+        candidate.scorePengalaman != null ||
+        candidate.scoreCulture != null ||
+        (candidate.status === "Menunggu" && Number(candidate.tahapInterview || 1) === 1) ||
+        (candidate.status === "Sedang Interview" && Number(candidate.tahapInterview || 1) === 1)
+    );
+}
+
+function isInterview2Candidate(candidate) {
+    return Boolean(
+        candidate.interview2Status ||
+        candidate.interviewerTahap2 ||
+        candidate.hasilInterview2 ||
+        candidate.waktuMulaiTahap2 ||
+        candidate.waktuSubmitTahap2 ||
+        candidate.interview2Final === true ||
+        Number(candidate.tahapInterview || 0) === 2 ||
+        candidate.status === "Menunggu Interview 2"
+    );
+}
+
+
+
 let unsubscribe =
     null;
 
 
 // ======================================================
-// DEFAULT DATE
+// DEFAULT DATE RANGE
 // ======================================================
 
 function getTodayKey() {
 
-    const d =
-        new Date();
+    const d = new Date();
 
     return (
-
         d.getFullYear() +
         "-" +
-
-        String(
-            d.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        ) +
-
+        String(d.getMonth() + 1).padStart(2, "0") +
         "-" +
-
-        String(
-            d.getDate()
-        ).padStart(
-            2,
-            "0"
-        )
-
+        String(d.getDate()).padStart(2, "0")
     );
 
 }
 
 
-const today =
-    getTodayKey();
+const today = getTodayKey();
 
+const savedDateStart =
+    localStorage.getItem("activeInterviewDateStart") ||
+    localStorage.getItem("activeInterviewDate") ||
+    today;
 
-const savedDate =
-    localStorage.getItem(
-        "activeInterviewDate"
-    );
-
-
-const initialDate =
-    savedDate ||
+const savedDateEnd =
+    localStorage.getItem("activeInterviewDateEnd") ||
+    localStorage.getItem("activeInterviewDate") ||
     today;
 
 
-document.getElementById(
-    "filterTanggal"
-).value =
-    initialDate;
+document.getElementById("filterTanggalMulai").value = savedDateStart;
+document.getElementById("filterTanggalSelesai").value = savedDateEnd;
 
 
 // ======================================================
-// TAMPILKAN TANGGAL AKTIF
+// TAMPILKAN PERIODE AKTIF
 // ======================================================
+
+function formatTanggalID(value) {
+
+    if (!value) return "-";
+
+    const date = new Date(value + "T00:00:00");
+
+    return date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
+
+}
+
 
 function updateTanggalHeader() {
 
-    const value =
-        document.getElementById(
-            "filterTanggal"
-        ).value;
+    const mulai =
+        document.getElementById("filterTanggalMulai").value;
 
+    const selesai =
+        document.getElementById("filterTanggalSelesai").value;
 
-    if (
-        !value
-    ) {
+    const header = document.getElementById("tanggalAktif");
 
-        document.getElementById(
-            "tanggalAktif"
-        ).innerText =
-            "-";
+    if (!header) return;
 
+    if (!mulai && !selesai) {
+        header.innerText = "-";
         return;
-
     }
 
+    if (mulai === selesai || !selesai) {
+        header.innerText = formatTanggalID(mulai);
+        return;
+    }
 
-    const date =
-        new Date(
-            value +
-            "T00:00:00"
-        );
+    if (!mulai) {
+        header.innerText = formatTanggalID(selesai);
+        return;
+    }
 
-
-    document.getElementById(
-        "tanggalAktif"
-    ).innerText =
-
-        date.toLocaleDateString(
-            "id-ID",
-            {
-                weekday:
-                    "long",
-
-                day:
-                    "numeric",
-
-                month:
-                    "long",
-
-                year:
-                    "numeric"
-            }
-        );
+    header.innerText =
+        `${formatTanggalID(mulai)} s/d ${formatTanggalID(selesai)}`;
 
 }
 
@@ -195,20 +261,24 @@ updateTanggalHeader();
 
 function loadData() {
 
-    const tanggal =
-        document.getElementById(
-            "filterTanggal"
-        ).value;
+    const tanggalMulai =
+        document.getElementById("filterTanggalMulai").value;
+
+    const tanggalSelesai =
+        document.getElementById("filterTanggalSelesai").value;
 
 
-    if (
-        !tanggal
-    ) {
+    if (!tanggalMulai || !tanggalSelesai) {
 
-        alert(
-            "Pilih tanggal terlebih dahulu."
-        );
+        alert("Pilih tanggal mulai dan tanggal sampai terlebih dahulu.");
+        return;
 
+    }
+
+
+    if (tanggalMulai > tanggalSelesai) {
+
+        alert("Tanggal mulai tidak boleh lebih besar dari tanggal sampai.");
         return;
 
     }
@@ -217,10 +287,10 @@ function loadData() {
     updateTanggalHeader();
 
 
-    localStorage.setItem(
-        "activeInterviewDate",
-        tanggal
-    );
+    localStorage.setItem("activeInterviewDateStart", tanggalMulai);
+    localStorage.setItem("activeInterviewDateEnd", tanggalSelesai);
+    // Tetap simpan key lama agar kompatibel dengan bagian sistem lain.
+    localStorage.setItem("activeInterviewDate", tanggalMulai);
 
 
     // ==================================================
@@ -251,8 +321,14 @@ function loadData() {
 
             where(
                 "tanggal",
-                "==",
-                tanggal
+                ">=",
+                tanggalMulai
+            ),
+
+            where(
+                "tanggal",
+                "<=",
+                tanggalSelesai
             )
 
         );
@@ -379,18 +455,21 @@ loadData();
 // FILTER DATE CHANGE
 // ======================================================
 
-document.getElementById(
-    "filterTanggal"
-).addEventListener(
-
+document.getElementById("filterTanggalMulai").addEventListener(
     "change",
-
     function() {
-
+        updateTanggalHeader();
         loadData();
-
     }
+);
 
+
+document.getElementById("filterTanggalSelesai").addEventListener(
+    "change",
+    function() {
+        updateTanggalHeader();
+        loadData();
+    }
 );
 
 
@@ -560,9 +639,9 @@ function terapkanFilter() {
         ).value;
 
 
-    const tahap =
+    const kategori =
         document.getElementById(
-            "filterTahap"
+            "filterKategori"
         ).value;
 
 
@@ -600,6 +679,16 @@ function terapkanFilter() {
         allCandidates.filter(
 
             candidate => {
+
+                // ======================================
+                // TAB REKAP
+                // ======================================
+
+                if (activeInterviewTab !== "all") {
+                    const category = getAdminCategory(candidate);
+                    if (category !== activeInterviewTab) return false;
+                }
+
 
                 // ======================================
                 // SEARCH
@@ -666,41 +755,19 @@ function terapkanFilter() {
                 // STATUS
                 // ======================================
 
-                if (
-                    status &&
-                    candidate.status !==
-                        status
-                ) {
-
-                    return false;
-
+                if (status) {
+                    const statusMatch =
+                        status === "Menunggu"
+                            ? (candidate.status === "Menunggu" || candidate.status === "Menunggu Interview 2")
+                            : candidate.status === status;
+                    if (!statusMatch) return false;
                 }
 
-
                 // ======================================
-                // TAHAP
+                // KATEGORI
                 // ======================================
-
-                if (
-                    tahap
-                ) {
-
-                    const candidateTahap =
-                        String(
-                            candidate.tahapInterview ||
-                            1
-                        );
-
-
-                    if (
-                        candidateTahap !==
-                        tahap
-                    ) {
-
-                        return false;
-
-                    }
-
+                if (kategori) {
+                    if (getAdminCategory(candidate) !== kategori) return false;
                 }
 
 
@@ -710,7 +777,7 @@ function terapkanFilter() {
 
                 if (
                     hasil &&
-                    candidate.hasil !==
+                    getNormalizedHasil1(candidate) !==
                         hasil
                 ) {
 
@@ -867,7 +934,7 @@ function resetFilter() {
 
 
     document.getElementById(
-        "filterTahap"
+        "filterKategori"
     ).value =
         "";
 
@@ -1367,6 +1434,101 @@ function getStatusHTML(
 
 
 // ======================================================
+// NORMALISASI HASIL INTERVIEW 1
+// ======================================================
+
+function getNormalizedHasil1(
+    candidate
+) {
+
+    const raw = String(
+        candidate?.hasil ?? ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+
+    // ==========================================
+    // TIDAK DIREKOMENDASIKAN
+    // ==========================================
+
+    if (
+        raw === "tidak direkomendasikan" ||
+        raw === "tidak disarankan" ||
+        raw === "not recommended" ||
+        raw === "notrecommended"
+    ) {
+
+        return "Tidak Direkomendasikan";
+
+    }
+
+
+    // ==========================================
+    // DIPERTIMBANGKAN
+    // ==========================================
+
+    if (
+        raw === "dipertimbangkan" ||
+        raw === "considered" ||
+        raw === "pertimbangkan"
+    ) {
+
+        return "Dipertimbangkan";
+
+    }
+
+
+    // ==========================================
+    // DISARANKAN
+    // ==========================================
+
+    if (
+        raw === "disarankan" ||
+        raw === "direkomendasikan" ||
+        raw === "recommended" ||
+        raw === "recommend" ||
+        raw === "recommended / disarankan"
+    ) {
+
+        return "Disarankan";
+
+    }
+
+
+    // ==========================================
+    // FALLBACK DARI TOTAL NILAI I1
+    // Jika field hasil kosong, dashboard tetap
+    // menentukan hasil berdasarkan total nilai.
+    // ==========================================
+
+    const total = Number(
+        candidate?.totalScore
+    );
+
+
+    if (Number.isFinite(total)) {
+
+        if (total >= 19) {
+            return "Disarankan";
+        }
+
+        if (total >= 14) {
+            return "Dipertimbangkan";
+        }
+
+        return "Tidak Direkomendasikan";
+
+    }
+
+
+    return "";
+
+}
+
+
+// ======================================================
 // HASIL I1
 // ======================================================
 
@@ -1374,9 +1536,13 @@ function getHasil1HTML(
     candidate
 ) {
 
+    const hasil =
+        getNormalizedHasil1(candidate);
+
+
     if (
-        candidate.hasil ===
-        "Direkomendasikan"
+        hasil === "Dipertimbangkan" ||
+        hasil === "Disarankan"
     ) {
 
         return `
@@ -1385,7 +1551,7 @@ function getHasil1HTML(
                 class="result-recommended"
             >
 
-                DIREKOMENDASIKAN
+                DISARANKAN
 
             </span>
 
@@ -1395,8 +1561,7 @@ function getHasil1HTML(
 
 
     if (
-        candidate.hasil ===
-        "Tidak Direkomendasikan"
+        hasil === "Tidak Direkomendasikan"
     ) {
 
         return `
@@ -1405,7 +1570,7 @@ function getHasil1HTML(
                 class="result-not"
             >
 
-                TIDAK DIREKOMENDASIKAN
+                TIDAK DISARANKAN
 
             </span>
 
@@ -1533,166 +1698,58 @@ function getHasil2HTML(
 function updateStatistics(
     data
 ) {
+    const total = data.length;
 
-    const total =
-        data.length;
+    const menunggu = data.filter(
+        candidate =>
+            candidate.status === "Menunggu" ||
+            candidate.status === "Menunggu Interview 2"
+    ).length;
 
+    const sedangInterview = data.filter(
+        candidate => candidate.status === "Sedang Interview"
+    ).length;
 
-    const menunggu =
-        data.filter(
+    const selesai = data.filter(
+        candidate => candidate.status === "Selesai"
+    ).length;
 
-            candidate =>
-                candidate.status ===
-                "Menunggu"
+    const recommended = data.filter(
+        candidate =>
+            getNormalizedHasil1(candidate) ===
+            "Disarankan"
+    ).length;
 
-        ).length;
+    const considered = data.filter(
+        candidate =>
+            getNormalizedHasil1(candidate) ===
+            "Dipertimbangkan"
+    ).length;
 
+    const notRecommended = data.filter(
+        candidate =>
+            getNormalizedHasil1(candidate) ===
+            "Tidak Direkomendasikan"
+    ).length;
 
-    const menunggu2 =
-        data.filter(
+    const setuju = data.filter(
+        candidate => candidate.hasilInterview2 === "Setuju"
+    ).length;
 
-            candidate =>
-                candidate.status ===
-                "Menunggu Interview 2"
+    const tidakSetuju = data.filter(
+        candidate => candidate.hasilInterview2 === "Tidak Setuju"
+    ).length;
 
-        ).length;
-
-
-    const interview =
-        data.filter(
-
-            candidate =>
-
-                candidate.status ===
-                    "Sedang Interview"
-
-                &&
-
-                Number(
-                    candidate.tahapInterview ||
-                    1
-                ) === 1
-
-        ).length;
-
-
-    const interview2 =
-        data.filter(
-
-            candidate =>
-
-                candidate.status ===
-                    "Sedang Interview"
-
-                &&
-
-                Number(
-                    candidate.tahapInterview ||
-                    1
-                ) === 2
-
-        ).length;
-
-
-    const selesai =
-        data.filter(
-
-            candidate =>
-
-                candidate.status ===
-                "Selesai"
-
-        ).length;
-
-
-    const recommended =
-        data.filter(
-
-            candidate =>
-
-                candidate.hasil ===
-                "Direkomendasikan"
-
-        ).length;
-
-
-    const notRecommended =
-        data.filter(
-
-            candidate =>
-
-                candidate.hasil ===
-                "Tidak Direkomendasikan"
-
-        ).length;
-
-
-    const setuju2 =
-        data.filter(
-
-            candidate =>
-
-                candidate.hasilInterview2 ===
-                "Setuju"
-
-        ).length;
-
-
-    setText(
-        "statTotal",
-        total
-    );
-
-
-    setText(
-        "statMenunggu",
-        menunggu
-    );
-
-
-    setText(
-        "statMenunggu2",
-        menunggu2
-    );
-
-
-    setText(
-        "statInterview",
-        interview
-    );
-
-
-    setText(
-        "statInterview2",
-        interview2
-    );
-
-
-    setText(
-        "statSelesai",
-        selesai
-    );
-
-
-    setText(
-        "statRecommended",
-        recommended
-    );
-
-
-    setText(
-        "statSetuju2",
-        setuju2
-    );
-
-
-    setText(
-        "statNotRecommended",
-        notRecommended
-    );
-
+    setText("statTotal", total);
+    setText("statMenunggu", menunggu);
+    setText("statInterview", sedangInterview);
+    setText("statSelesai", selesai);
+    setText("statRecommended", recommended);
+    setText("statConsidered", considered);
+    setText("statNotRecommended", notRecommended);
+    setText("statSetuju2", setuju);
+    setText("statTidakSetuju2", tidakSetuju);
 }
-
 
 // ======================================================
 // SUMMARY
@@ -1977,7 +2034,7 @@ function buildDetailHTML(
 
 
         finalText =
-            "TIDAK DIREKOMENDASIKAN";
+            "TIDAK DISARANKAN";
 
     }
 
@@ -2023,7 +2080,7 @@ function buildDetailHTML(
 
 
             ${detailRow(
-                "Nomor Antrean",
+                "Nomor Kandidat",
                 candidate.nomorAntrian
             )}
 
@@ -2152,7 +2209,7 @@ function buildDetailHTML(
 
             ${detailRow(
                 "Hasil",
-                candidate.hasil
+                getNormalizedHasil1(candidate) || "-"
             )}
 
 
@@ -2594,7 +2651,7 @@ function exportExcel() {
                         candidate.tanggal ||
                         "",
 
-                    "Nomor Antrean":
+                    "Nomor Kandidat":
                         candidate.nomorAntrian ||
                         "",
 
@@ -2674,7 +2731,7 @@ function exportExcel() {
                         "",
 
                     "Hasil I1":
-                        candidate.hasil ||
+                        getNormalizedHasil1(candidate) ||
                         "",
 
                     "Rekomendasi Jabatan":
@@ -2817,18 +2874,25 @@ function exportExcel() {
         );
 
 
-    const tanggal =
-        document.getElementById(
-            "filterTanggal"
-        ).value ||
+    const tanggalMulai =
+        document.getElementById("filterTanggalMulai").value ||
         getTodayKey();
+
+    const tanggalSelesai =
+        document.getElementById("filterTanggalSelesai").value ||
+        tanggalMulai;
+
+    const periode =
+        tanggalMulai === tanggalSelesai
+            ? tanggalMulai
+            : `${tanggalMulai}_sampai_${tanggalSelesai}`;
 
 
     XLSX.writeFile(
 
         workbook,
 
-        `Dashboard_Interview_${tanggal}.xlsx`
+        `Dashboard_Interview_${periode}.xlsx`
 
     );
 
@@ -2838,6 +2902,8 @@ function exportExcel() {
 // ======================================================
 // IMPORT / UPDATE DATA BSP EXCEL
 // ======================================================
+
+window.importBSPExcel = importBSPExcel;
 
 async function importBSPExcel() {
     const fileInput = document.getElementById("fileBSP");
@@ -2899,7 +2965,7 @@ async function importBSPExcel() {
 
             noRegistrasi = noRegistrasi.replace(/\.0$/, "").replace(/\s/g, "");
 
-            if (!/^\d+$/.test(noRegistrasi) || !nama) {
+            if (!/^\d{7}$/.test(noRegistrasi) || !nama) {
                 invalid++;
                 return;
             }
@@ -2913,7 +2979,7 @@ async function importBSPExcel() {
         const data = Array.from(map.values());
 
         if (!data.length) {
-            throw new Error("Tidak ada data BSP valid. Pastikan No Registrasi berupa angka dan Nama terisi.");
+            throw new Error("Tidak ada data BSP valid. Pastikan format No Registrasi 7 digit dan Nama terisi.");
         }
 
         let saved = 0;
@@ -2961,25 +3027,8 @@ async function importBSPExcel() {
     }
 }
 
-
-// ======================================================
-// BIND TOMBOL IMPORT BSP
 // ======================================================
 
-window.importBSPExcel = importBSPExcel;
-
-const btnImportBSP =
-    document.getElementById("btnImportBSP");
-
-if (btnImportBSP) {
-    btnImportBSP.addEventListener(
-        "click",
-        importBSPExcel
-    );
-}
-
-
-// ======================================================
 // HELPER SET TEXT
 // ======================================================
 
@@ -3031,6 +3080,13 @@ function escapeHtml(
     return div.innerHTML;
 
 }
+
+
+// ======================================================
+// INITIAL TAB
+// ======================================================
+
+gantiTabInterview("all");
 
 
 // ======================================================
