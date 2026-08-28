@@ -525,48 +525,20 @@ window.terapkanFilter =
 
 function terapkanFilter() {
 
-    const search =
-        document.getElementById(
-            "filterSearch"
-        ).value
-            .trim()
-            .toLowerCase();
+    function terapkanFilter() {
 
+    const getFilterValue = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim().toLowerCase() : "";
+    };
 
-    const status =
-        document.getElementById(
-            "filterStatus"
-        ).value;
-
-
-    const kategori =
-        document.getElementById(
-            "filterKategori"
-        ).value;
-
-
-    const hasil =
-        document.getElementById(
-            "filterHasil"
-        ).value;
-
-
-    const hasil2 =
-        document.getElementById(
-            "filterHasil2"
-        ).value;
-
-
-    const interviewer =
-        document.getElementById(
-            "filterInterviewer"
-        ).value;
-
-
-    const jabatan =
-        document.getElementById(
-            "filterJabatan"
-        ).value;
+    const search = getFilterValue("filterSearch");
+    const status = getFilterValue("filterStatus");
+    const kategori = getFilterValue("filterKategori");
+    const hasil = getFilterValue("filterHasil");
+    const hasil2 = getFilterValue("filterHasil2");
+    const interviewer = getFilterValue("filterInterviewer");
+    const jabatan = getFilterValue("filterJabatan");
 
 
     const area =
