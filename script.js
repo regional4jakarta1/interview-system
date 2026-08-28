@@ -1141,13 +1141,13 @@ async function checkIn() {
         // ==============================================
 
         if (
-            !/^\d{7}$/.test(
+            !/^\d+$/.test(
                 noRegistrasi
             )
         ) {
 
             alert(
-                "No Registrasi wajib tepat 7 digit angka."
+                "No Registrasi hanya boleh berupa angka."
             );
 
             return;
