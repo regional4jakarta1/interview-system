@@ -165,7 +165,7 @@ let unsubscribe =
 
 
 // ======================================================
-// DEFAULT DATE RANGE
+// DEFAULT / GLOBAL INTERVIEW DATE
 // ======================================================
 
 function getTodayKey() {
@@ -182,26 +182,18 @@ function getTodayKey() {
 
 }
 
-
 const today = getTodayKey();
+const dateFilter = document.getElementById("filterTanggal");
 
-const savedDateStart =
-    localStorage.getItem("activeInterviewDateStart") ||
-    localStorage.getItem("activeInterviewDate") ||
-    today;
-
-const savedDateEnd =
-    localStorage.getItem("activeInterviewDateEnd") ||
-    localStorage.getItem("activeInterviewDate") ||
-    today;
-
-
-document.getElementById("filterTanggalMulai").value = savedDateStart;
-document.getElementById("filterTanggalSelesai").value = savedDateEnd;
+if (dateFilter) {
+    dateFilter.value =
+        localStorage.getItem("activeInterviewDate") ||
+        today;
+}
 
 
 // ======================================================
-// TAMPILKAN PERIODE AKTIF
+// TAMPILKAN TANGGAL AKTIF
 // ======================================================
 
 function formatTanggalID(value) {
@@ -218,39 +210,20 @@ function formatTanggalID(value) {
 
 }
 
-
 function updateTanggalHeader() {
 
-    const mulai =
-        document.getElementById("filterTanggalMulai").value;
-
-    const selesai =
-        document.getElementById("filterTanggalSelesai").value;
+    const tanggal =
+        document.getElementById("filterTanggal")?.value || "";
 
     const header = document.getElementById("tanggalAktif");
 
-    if (!header) return;
-
-    if (!mulai && !selesai) {
-        header.innerText = "-";
-        return;
+    if (header) {
+        header.innerText = tanggal
+            ? formatTanggalID(tanggal)
+            : "-";
     }
-
-    if (mulai === selesai || !selesai) {
-        header.innerText = formatTanggalID(mulai);
-        return;
-    }
-
-    if (!mulai) {
-        header.innerText = formatTanggalID(selesai);
-        return;
-    }
-
-    header.innerText =
-        `${formatTanggalID(mulai)} s/d ${formatTanggalID(selesai)}`;
 
 }
-
 
 updateTanggalHeader();
 
@@ -261,216 +234,143 @@ updateTanggalHeader();
 
 function loadData() {
 
-    const tanggalMulai =
-        document.getElementById("filterTanggalMulai").value;
+    const tanggal =
+        document.getElementById("filterTanggal")?.value;
 
-    const tanggalSelesai =
-        document.getElementById("filterTanggalSelesai").value;
-
-
-    if (!tanggalMulai || !tanggalSelesai) {
-
-        alert("Pilih tanggal mulai dan tanggal sampai terlebih dahulu.");
+    if (!tanggal) {
+        allCandidates = [];
+        terapkanFilter();
         return;
-
     }
-
-
-    if (tanggalMulai > tanggalSelesai) {
-
-        alert("Tanggal mulai tidak boleh lebih besar dari tanggal sampai.");
-        return;
-
-    }
-
 
     updateTanggalHeader();
+    localStorage.setItem("activeInterviewDate", tanggal);
 
-
-    localStorage.setItem("activeInterviewDateStart", tanggalMulai);
-    localStorage.setItem("activeInterviewDateEnd", tanggalSelesai);
-    // Tetap simpan key lama agar kompatibel dengan bagian sistem lain.
-    localStorage.setItem("activeInterviewDate", tanggalMulai);
-
-
-    // ==================================================
-    // UNSUBSCRIBE LISTENER LAMA
-    // ==================================================
-
-    if (
-        typeof unsubscribe ===
-        "function"
-    ) {
-
+    if (typeof unsubscribe === "function") {
         unsubscribe();
-
     }
 
+    const q = query(
+        collection(db, "interviewQueue"),
+        where("tanggal", "==", tanggal)
+    );
 
-    // ==================================================
-    // FIRESTORE QUERY
-    // ==================================================
+    unsubscribe = onSnapshot(
+        q,
+        snapshot => {
 
-    const q =
-        query(
+            allCandidates = [];
 
-            collection(
-                db,
-                "interviewQueue"
-            ),
+            snapshot.forEach(docSnapshot => {
+                allCandidates.push({
+                    id: docSnapshot.id,
+                    ...docSnapshot.data()
+                });
+            });
 
-            where(
-                "tanggal",
-                ">=",
-                tanggalMulai
-            ),
-
-            where(
-                "tanggal",
-                "<=",
-                tanggalSelesai
-            )
-
-        );
-
-
-    unsubscribe =
-        onSnapshot(
-
-            q,
-
-            snapshot => {
-
-                allCandidates =
-                    [];
-
-
-                snapshot.forEach(
-                    docSnapshot => {
-
-                        allCandidates.push({
-
-                            id:
-                                docSnapshot.id,
-
-                            ...docSnapshot.data()
-
-                        });
-
-                    }
+            allCandidates.sort((a, b) => {
+                return String(a.nomorAntrian || "").localeCompare(
+                    String(b.nomorAntrian || ""),
+                    undefined,
+                    { numeric: true }
                 );
+            });
 
+            buildInterviewerFilter();
+            terapkanFilter();
+        },
+        error => {
+            console.error("Firebase error:", error);
 
-                // ======================================
-                // SORT NOMOR ANTREAN
-                // ======================================
-
-                allCandidates.sort(
-
-                    (
-                        a,
-                        b
-                    ) => {
-
-                        return (
-
-                            String(
-                                a.nomorAntrian ||
-                                ""
-                            ).localeCompare(
-
-                                String(
-                                    b.nomorAntrian ||
-                                    ""
-                                ),
-
-                                undefined,
-
-                                {
-                                    numeric:
-                                        true
-                                }
-
-                            )
-
-                        );
-
-                    }
-
-                );
-
-
-                buildInterviewerFilter();
-
-
-                terapkanFilter();
-
-            },
-
-
-            error => {
-
-                console.error(
-                    "Firebase error:",
-                    error
-                );
-
-
-                document.getElementById(
-                    "tableBody"
-                ).innerHTML = `
-
+            const body = document.getElementById("tableBody");
+            if (body) {
+                body.innerHTML = `
                     <tr>
-
-                        <td
-                            colspan="17"
-                            class="empty"
-                        >
-
-                            Gagal mengambil data.
-
-                            <br><br>
-
-                            ${escapeHtml(
-                                error.message
-                            )}
-
+                        <td colspan="17" class="empty">
+                            Gagal mengambil data.<br><br>
+                            ${escapeHtml(error.message || "Unknown error")}
                         </td>
-
                     </tr>
-
                 `;
-
             }
-
-        );
-
+        }
+    );
 }
 
 
-loadData();
+// ======================================================
+// SINKRONISASI TANGGAL GLOBAL DARI FIRESTORE
+// systemConfig/interviewsettings
+// ======================================================
+
+const globalDateRef = doc(
+    db,
+    "systemConfig",
+    "interviewsettings"
+);
+
+let applyingGlobalDate = false;
+
+try {
+    onSnapshot(
+        globalDateRef,
+        snapshot => {
+
+            if (!snapshot.exists()) {
+                loadData();
+                return;
+            }
+
+            const data = snapshot.data() || {};
+            const globalDate =
+                data.activeDate ||
+                data.tanggalInterview ||
+                data.tanggal ||
+                data.date ||
+                "";
+
+            if (globalDate && dateFilter) {
+                const normalized = String(globalDate).slice(0, 10);
+
+                if (dateFilter.value !== normalized) {
+                    applyingGlobalDate = true;
+                    dateFilter.value = normalized;
+                    localStorage.setItem("activeInterviewDate", normalized);
+                    updateTanggalHeader();
+                    applyingGlobalDate = false;
+                }
+            }
+
+            loadData();
+        },
+        error => {
+            console.warn(
+                "Global interview date tidak dapat dibaca:",
+                error.message
+            );
+            loadData();
+        }
+    );
+} catch (error) {
+    console.warn("Global date listener gagal:", error);
+    loadData();
+}
 
 
 // ======================================================
 // FILTER DATE CHANGE
 // ======================================================
 
-document.getElementById("filterTanggalMulai").addEventListener(
-    "change",
-    function() {
-        updateTanggalHeader();
-        loadData();
-    }
-);
-
-
-document.getElementById("filterTanggalSelesai").addEventListener(
-    "change",
-    function() {
-        updateTanggalHeader();
-        loadData();
-    }
-);
+if (dateFilter) {
+    dateFilter.addEventListener(
+        "change",
+        function() {
+            if (applyingGlobalDate) return;
+            updateTanggalHeader();
+            loadData();
+        }
+    );
+}
 
 
 // ======================================================
@@ -1218,11 +1118,18 @@ function createTableRow(
 
             <td>
 
-                ${candidate.totalScore != null
-                    ? escapeHtml(
-                        candidate.totalScore
-                    ) + " / 25"
-                    : "-"}
+                ${(() => {
+                    const totalValue = [
+                        candidate?.totalScore,
+                        candidate?.totalI1,
+                        candidate?.totalInterview1,
+                        candidate?.scoreTotal,
+                        candidate?.total
+                    ].find(v => v !== null && v !== undefined && v !== "");
+                    return totalValue !== undefined
+                        ? escapeHtml(totalValue) + " / 25"
+                        : "-";
+                })()}
 
             </td>
 
@@ -1498,28 +1405,41 @@ function getNormalizedHasil1(
 
 
     // ==========================================
-    // FALLBACK DARI TOTAL NILAI I1
-    // Jika field hasil kosong, dashboard tetap
-    // menentukan hasil berdasarkan total nilai.
+    // FALLBACK DARI NILAI INTERVIEW 1
     // ==========================================
+    // Beberapa data lama/versi sebelumnya bisa menyimpan
+    // total dengan nama field yang berbeda. Dashboard
+    // harus tetap bisa membaca semuanya.
 
-    const total = Number(
-        candidate?.totalScore
-    );
+    const totalCandidates = [
+        candidate?.totalScore,
+        candidate?.totalI1,
+        candidate?.totalInterview1,
+        candidate?.scoreTotal,
+        candidate?.total
+    ];
 
+    let total = NaN;
+
+    for (const value of totalCandidates) {
+        const n = Number(value);
+        if (Number.isFinite(n)) {
+            total = n;
+            break;
+        }
+    }
 
     if (Number.isFinite(total)) {
-
+        // Sesuai penilaian Interview 1: 5 aspek x 1-5 = 25.
         if (total >= 19) {
             return "Disarankan";
         }
 
-        if (total >= 14) {
+        if (total >= 15) {
             return "Dipertimbangkan";
         }
 
         return "Tidak Direkomendasikan";
-
     }
 
 
