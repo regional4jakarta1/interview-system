@@ -13,7 +13,6 @@ import {
     where,
     doc,
     onSnapshot,
-    doc,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
