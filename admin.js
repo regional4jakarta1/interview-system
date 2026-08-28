@@ -300,13 +300,13 @@ function loadData() {
 
 // ======================================================
 // SINKRONISASI TANGGAL GLOBAL DARI FIRESTORE
-// systemConfig/interviewsettings
+// systemConfig/interviewSettings
 // ======================================================
 
 const globalDateRef = doc(
     db,
     "systemConfig",
-    "interviewsettings"
+    "interviewSettings"
 );
 
 let applyingGlobalDate = false;
@@ -1119,14 +1119,8 @@ function createTableRow(
             <td>
 
                 ${(() => {
-                    const totalValue = [
-                        candidate?.totalScore,
-                        candidate?.totalI1,
-                        candidate?.totalInterview1,
-                        candidate?.scoreTotal,
-                        candidate?.total
-                    ].find(v => v !== null && v !== undefined && v !== "");
-                    return totalValue !== undefined
+                    const totalValue = getNumericInterview1Total(candidate);
+                    return Number.isFinite(totalValue)
                         ? escapeHtml(totalValue) + " / 25"
                         : "-";
                 })()}
@@ -1344,107 +1338,33 @@ function getStatusHTML(
 // NORMALISASI HASIL INTERVIEW 1
 // ======================================================
 
-function getNormalizedHasil1(
-    candidate
-) {
-
-    const raw = String(
-        candidate?.hasil ?? ""
-    )
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, " ");
-
-
-    // ==========================================
-    // TIDAK DIREKOMENDASIKAN
-    // ==========================================
-
-    if (
-        raw === "tidak direkomendasikan" ||
-        raw === "tidak disarankan" ||
-        raw === "not recommended" ||
-        raw === "notrecommended"
-    ) {
-
-        return "Tidak Direkomendasikan";
-
-    }
-
-
-    // ==========================================
-    // DIPERTIMBANGKAN
-    // ==========================================
-
-    if (
-        raw === "dipertimbangkan" ||
-        raw === "considered" ||
-        raw === "pertimbangkan"
-    ) {
-
-        return "Dipertimbangkan";
-
-    }
-
-
-    // ==========================================
-    // DISARANKAN
-    // ==========================================
-
-    if (
-        raw === "disarankan" ||
-        raw === "direkomendasikan" ||
-        raw === "recommended" ||
-        raw === "recommend" ||
-        raw === "recommended / disarankan"
-    ) {
-
-        return "Disarankan";
-
-    }
-
-
-    // ==========================================
-    // FALLBACK DARI NILAI INTERVIEW 1
-    // ==========================================
-    // Beberapa data lama/versi sebelumnya bisa menyimpan
-    // total dengan nama field yang berbeda. Dashboard
-    // harus tetap bisa membaca semuanya.
-
-    const totalCandidates = [
-        candidate?.totalScore,
-        candidate?.totalI1,
-        candidate?.totalInterview1,
-        candidate?.scoreTotal,
-        candidate?.total
-    ];
-
-    let total = NaN;
-
-    for (const value of totalCandidates) {
-        const n = Number(value);
-        if (Number.isFinite(n)) {
-            total = n;
-            break;
+function getNumericInterview1Total(candidate) {
+    const values = [candidate?.totalScore, candidate?.totalI1, candidate?.totalInterview1, candidate?.scoreTotal, candidate?.total];
+    for (const value of values) {
+        if (value === null || value === undefined || value === "") continue;
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        const match = String(value).replace(",", ".").match(/-?\d+(?:[.,]\d+)?/);
+        if (match) {
+            const n = Number(match[0].replace(",", "."));
+            if (Number.isFinite(n)) return n;
         }
     }
+    return NaN;
+}
 
+function getNormalizedHasil1(candidate) {
+    const raw = String(candidate?.hasil ?? candidate?.hasilInterview1 ?? candidate?.hasilI1 ?? "")
+        .trim().toLowerCase().replace(/\s+/g, " ");
+    if (raw.includes("tidak direkom") || raw.includes("tidak disaran") || raw === "not recommended" || raw === "notrecommended") return "Tidak Direkomendasikan";
+    if (raw.includes("dipertimbang") || raw === "considered" || raw === "consider") return "Dipertimbangkan";
+    if (raw.includes("direkom") || raw.includes("disaran") || raw === "recommended" || raw === "recommend") return "Disarankan";
+    const total = getNumericInterview1Total(candidate);
     if (Number.isFinite(total)) {
-        // Sesuai penilaian Interview 1: 5 aspek x 1-5 = 25.
-        if (total >= 19) {
-            return "Disarankan";
-        }
-
-        if (total >= 15) {
-            return "Dipertimbangkan";
-        }
-
+        if (total >= 19) return "Disarankan";
+        if (total >= 15) return "Dipertimbangkan";
         return "Tidak Direkomendasikan";
     }
-
-
     return "";
-
 }
 
 
@@ -2885,7 +2805,7 @@ async function importBSPExcel() {
 
             noRegistrasi = noRegistrasi.replace(/\.0$/, "").replace(/\s/g, "");
 
-            if (!/^\d{7}$/.test(noRegistrasi) || !nama) {
+            if (!/^\d+$/.test(noRegistrasi) || !nama) {
                 invalid++;
                 return;
             }
@@ -2899,7 +2819,7 @@ async function importBSPExcel() {
         const data = Array.from(map.values());
 
         if (!data.length) {
-            throw new Error("Tidak ada data BSP valid. Pastikan format No Registrasi 7 digit dan Nama terisi.");
+            throw new Error("Tidak ada data BSP valid. Pastikan No Registrasi hanya berisi angka dan Nama terisi.");
         }
 
         let saved = 0;
