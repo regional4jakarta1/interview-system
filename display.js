@@ -11,7 +11,8 @@ import {
     collection,
     query,
     where,
-    onSnapshot
+    onSnapshot,
+    doc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 
@@ -90,7 +91,7 @@ function getTodayKey() {
 }
 
 
-const activeDate =
+let activeDate =
     localStorage.getItem(
         "activeInterviewDate"
     ) ||
@@ -291,8 +292,15 @@ function updateSoundButton() {
 
 
 // ======================================================
-// LOAD QUEUE
+// LOAD QUEUE REALTIME - DATE GLOBAL
 // ======================================================
+
+let unsubscribeQueue = null;
+
+function listenDisplayQueue(tanggal) {
+    activeDate = String(tanggal || getTodayKey()).slice(0,10);
+    localStorage.setItem("activeInterviewDate", activeDate);
+    if (typeof unsubscribeQueue === "function") unsubscribeQueue();
 
 const queueQuery =
     query(
@@ -315,7 +323,7 @@ const queueQuery =
 // REALTIME LISTENER
 // ======================================================
 
-onSnapshot(
+unsubscribeQueue = onSnapshot(
 
     queueQuery,
 
@@ -438,6 +446,20 @@ onSnapshot(
 
 );
 
+
+
+}
+
+listenDisplayQueue(activeDate);
+
+const globalDateRef = doc(db, "systemConfig", "interviewSettings");
+onSnapshot(globalDateRef, function(snapshot) {
+    const data = snapshot.exists() ? (snapshot.data() || {}) : {};
+    const tanggalGlobal = data.activeDate || data.tanggalInterview || data.tanggal || data.date || "";
+    if (tanggalGlobal && String(tanggalGlobal).slice(0,10) !== activeDate) listenDisplayQueue(tanggalGlobal);
+}, function(error) {
+    console.warn("DISPLAY global date listener:", error.message);
+});
 
 // ======================================================
 // GET LAST CALL TIME
@@ -1015,8 +1037,12 @@ function speak(
     // JALANKAN
     // ==================================================
 
-    window.speechSynthesis.speak(
-        utterance
-    );
+    utterance.onstart = () => console.log("TTS mulai:", text);
+    utterance.onerror = (event) => console.warn("TTS gagal:", event?.error || event);
+    window.speechSynthesis.speak(utterance);
 
+}
+
+if ("speechSynthesis" in window) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
