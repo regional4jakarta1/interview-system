@@ -2839,8 +2839,6 @@ function exportExcel() {
 // IMPORT / UPDATE DATA BSP EXCEL
 // ======================================================
 
-window.importBSPExcel = importBSPExcel;
-
 async function importBSPExcel() {
     const fileInput = document.getElementById("fileBSP");
     const statusElement = document.getElementById("statusImportBSP");
@@ -2962,6 +2960,24 @@ async function importBSPExcel() {
         alert(`Import BSP gagal.\n\n${error.message}`);
     }
 }
+
+
+// ======================================================
+// BIND TOMBOL IMPORT BSP
+// ======================================================
+
+window.importBSPExcel = importBSPExcel;
+
+const btnImportBSP =
+    document.getElementById("btnImportBSP");
+
+if (btnImportBSP) {
+    btnImportBSP.addEventListener(
+        "click",
+        importBSPExcel
+    );
+}
+
 
 // ======================================================
 // HELPER SET TEXT
