@@ -11,6 +11,7 @@ import {
     collection,
     query,
     where,
+    doc,
     onSnapshot,
     doc,
     runTransaction
@@ -91,7 +92,7 @@ function getTodayKey() {
 }
 
 
-const activeDate =
+let activeDate =
     localStorage.getItem(
         "activeInterviewDate"
     ) ||
@@ -248,8 +249,15 @@ function updateInterviewTabs() {
 setupInterviewTabs();
 
 // ======================================================
-// LOAD QUEUE REALTIME
+// LOAD QUEUE REALTIME - DATE GLOBAL
 // ======================================================
+
+let unsubscribeQueue = null;
+
+function listenQueueByDate(tanggal) {
+    activeDate = String(tanggal || getTodayKey()).slice(0,10);
+    localStorage.setItem("activeInterviewDate", activeDate);
+    if (typeof unsubscribeQueue === "function") unsubscribeQueue();
 
 const queueQuery =
     query(
@@ -266,7 +274,7 @@ const queueQuery =
     );
 
 
-onSnapshot(
+unsubscribeQueue = onSnapshot(
     queueQuery,
 
     function(snapshot) {
@@ -341,6 +349,20 @@ onSnapshot(
     }
 );
 
+
+
+}
+
+listenQueueByDate(activeDate);
+
+const globalDateRef = doc(db, "systemConfig", "interviewSettings");
+onSnapshot(globalDateRef, function(snapshot) {
+    const data = snapshot.exists() ? (snapshot.data() || {}) : {};
+    const tanggalGlobal = data.activeDate || data.tanggalInterview || data.tanggal || data.date || "";
+    if (tanggalGlobal && String(tanggalGlobal).slice(0,10) !== activeDate) listenQueueByDate(tanggalGlobal);
+}, function(error) {
+    console.warn("INTERVIEWER global date listener:", error.message);
+});
 
 // ======================================================
 // RENDER QUEUE
