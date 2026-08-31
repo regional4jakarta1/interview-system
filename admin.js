@@ -1717,23 +1717,29 @@ function updateStatistics(
         candidate => candidate.hasil === "Tidak Direkomendasikan"
     ).length;
 
-    const setuju = data.filter(
-        candidate => candidate.hasilInterview2 === "Setuju"
+    // Kandidat yang masuk cabang persetujuan I2:
+    // hanya kandidat Dipertimbangkan yang kemudian disetujui
+    // berdasarkan rekomendasi jabatan Bibit / TAD.
+    const setujuBibit = data.filter(
+        candidate =>
+            candidate.hasil === "Dipertimbangkan" &&
+            candidate.hasilInterview2 === "Setuju" &&
+            candidate.rekomendasiJabatan === "FL Bibit"
     ).length;
 
-    const tidakSetuju = data.filter(
-        candidate => candidate.hasilInterview2 === "Tidak Setuju"
+    const setujuTad = data.filter(
+        candidate =>
+            candidate.hasil === "Dipertimbangkan" &&
+            candidate.hasilInterview2 === "Setuju" &&
+            candidate.rekomendasiJabatan === "Sales TAD"
     ).length;
 
     setText("statTotal", total);
-    setText("statMenunggu", menunggu);
-    setText("statInterview", sedangInterview);
-    setText("statSelesai", selesai);
     setText("statRecommended", recommended);
     setText("statConsidered", considered);
     setText("statNotRecommended", notRecommended);
-    setText("statSetuju2", setuju);
-    setText("statTidakSetuju2", tidakSetuju);
+    setText("statSetujuBibit", setujuBibit);
+    setText("statSetujuTad", setujuTad);
 }
 
 // ======================================================
