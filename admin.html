@@ -179,6 +179,10 @@
             align-items: stretch;
         }
 
+        .stats.approval-mode {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .stat {
             background: #fff;
             padding: 22px 20px;
@@ -193,6 +197,26 @@
 
         .stat.stat-total {
             background: #fff;
+        }
+
+        .stat.stat-approval-approved {
+            background: #eef9f3;
+            border: 1px solid #c8ead8;
+        }
+
+        .stat.stat-approval-approved .stat-label,
+        .stat.stat-approval-approved .stat-number {
+            color: #007a45;
+        }
+
+        .stat.stat-approval-not {
+            background: #fff0f0;
+            border: 1px solid #f2c3c3;
+        }
+
+        .stat.stat-approval-not .stat-label,
+        .stat.stat-approval-not .stat-number {
+            color: #c82333;
         }
 
         .stat.stat-recommended {
@@ -305,13 +329,15 @@
         }
 
         @media (max-width: 1000px) {
-            .stats {
+            .stats,
+            .stats.approval-mode {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 600px) {
-            .stats {
+            .stats,
+            .stats.approval-mode {
                 grid-template-columns: 1fr;
             }
 
