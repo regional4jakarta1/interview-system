@@ -137,18 +137,70 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
             margin-bottom: 20px;
             align-items: stretch;
         }
 
         .stat {
             background: white;
-            padding: 17px;
-            border-radius: 13px;
+            padding: 22px 20px;
+            border-radius: 14px;
             box-shadow: 0 4px 15px rgba(0,0,0,.05);
             min-width: 0;
+            min-height: 112px;
+            box-sizing: border-box;
+        }
+
+        .stat-label {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.25;
+            font-weight: 600;
+        }
+
+        .stat-number {
+            font-size: 40px;
+            line-height: 1;
+            font-weight: 800;
+            margin-top: 12px;
+        }
+
+        /* Warna kartu utama */
+        .stat-recommended {
+            background: #eaf7f0;
+            border: 1px solid #ccebd9;
+        }
+
+        .stat-recommended .stat-label,
+        .stat-recommended .stat-number {
+            color: #087443;
+        }
+
+        .stat-considered {
+            background: #fff4e8;
+            border: 1px solid #f7d7b5;
+        }
+
+        .stat-considered .stat-label,
+        .stat-considered .stat-number {
+            color: #c66a08;
+        }
+
+        .stat-not-recommended {
+            background: #fff0f0;
+            border: 1px solid #f3cccc;
+        }
+
+        .stat-not-recommended .stat-label,
+        .stat-not-recommended .stat-number {
+            color: #b4232d;
+        }
+
+        .stat-total {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
         }
 
         /* Struktur cabang Dipertimbangkan -> persetujuan I2 */
@@ -173,17 +225,18 @@
             left: 7px;
             top: 0;
             bottom: 0;
-            width: 1px;
-            background: #d9d9d9;
+            width: 2px;
+            background: #e0c9ad;
         }
 
         .stat-branch-item {
             position: relative;
-            background: white;
-            padding: 12px 13px;
+            padding: 14px 15px;
             border-radius: 11px;
             box-shadow: 0 3px 12px rgba(0,0,0,.05);
             min-width: 0;
+            min-height: 70px;
+            box-sizing: border-box;
         }
 
         .stat-branch-item::before {
@@ -192,20 +245,33 @@
             left: -11px;
             top: 50%;
             width: 11px;
-            height: 1px;
-            background: #d9d9d9;
+            height: 2px;
+            background: #e0c9ad;
+        }
+
+        .stat-branch-bibit {
+            background: #f2faf6;
+            border: 1px solid #d5eee0;
+        }
+
+        .stat-branch-tad {
+            background: #f2faf6;
+            border: 1px solid #d5eee0;
         }
 
         .stat-branch-label {
-            color: #666;
-            font-size: 11px;
+            color: #555;
+            font-size: 13px;
             line-height: 1.25;
+            font-weight: 600;
         }
 
         .stat-branch-number {
-            font-size: 23px;
-            font-weight: bold;
-            margin-top: 5px;
+            font-size: 30px;
+            line-height: 1;
+            font-weight: 800;
+            margin-top: 7px;
+            color: #087443;
         }
 
         @media (max-width: 1000px) {
@@ -1003,36 +1069,36 @@
 
     <section class="stats">
 
-        <div class="stat">
+        <div class="stat stat-total">
             <div class="stat-label">Total Kandidat</div>
             <div class="stat-number" id="statTotal">0</div>
         </div>
 
-        <div class="stat">
+        <div class="stat stat-recommended">
             <div class="stat-label">Disarankan</div>
             <div class="stat-number" id="statRecommended">0</div>
         </div>
 
         <div class="stat-considered-tree">
-            <div class="stat">
+            <div class="stat stat-considered">
                 <div class="stat-label">Dipertimbangkan</div>
                 <div class="stat-number" id="statConsidered">0</div>
             </div>
 
             <div class="stat-branch">
-                <div class="stat-branch-item">
+                <div class="stat-branch-item stat-branch-bibit">
                     <div class="stat-branch-label">Disetujui Bibit</div>
                     <div class="stat-branch-number" id="statSetujuBibit">0</div>
                 </div>
 
-                <div class="stat-branch-item">
+                <div class="stat-branch-item stat-branch-tad">
                     <div class="stat-branch-label">Disetujui TAD</div>
                     <div class="stat-branch-number" id="statSetujuTad">0</div>
                 </div>
             </div>
         </div>
 
-        <div class="stat">
+        <div class="stat stat-not-recommended">
             <div class="stat-label">Tidak Direkomendasikan</div>
             <div class="stat-number" id="statNotRecommended">0</div>
         </div>
