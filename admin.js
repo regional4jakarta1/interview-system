@@ -89,11 +89,12 @@ function getAdminCategory(candidate) {
 }
 
 function gantiTabInterview(tab) {
-    const allowed = ["all", "bibit", "tad"];
+    const allowed = ["all", "organik", "bibit", "tad"];
     activeInterviewTab = allowed.includes(String(tab)) ? String(tab) : "all";
 
     const buttons = {
         all: document.getElementById("tabAdminAll"),
+        organik: document.getElementById("tabAdminOrganik"),
         bibit: document.getElementById("tabAdminBibit"),
         tad: document.getElementById("tabAdminTad")
     };
@@ -108,6 +109,7 @@ function gantiTabInterview(tab) {
     if (description) {
         description.innerText = {
             all: "Rekap keseluruhan seluruh peserta interview.",
+            organik: "Rekap kandidat dengan rekomendasi FL Organik dan Sales Organik.",
             bibit: "Rekap kandidat dengan rekomendasi FL Bibit.",
             tad: "Rekap kandidat dengan rekomendasi Sales TAD."
         }[activeInterviewTab];
@@ -119,24 +121,10 @@ function gantiTabInterview(tab) {
         filterKategori.value = activeInterviewTab === "all" ? "" : activeInterviewTab;
     }
 
-    // Mode statistik mengikuti tab aktif:
-    // ALL = statistik rekomendasi Interview 1.
-    // BIBIT/TAD = Total Kandidat + Disetujui + Tidak Disetujui.
-    const approvalApprovedCard = document.getElementById("statApprovalApprovedCard");
-    const approvalNotCard = document.getElementById("statApprovalNotCard");
-    const recommendedCard = document.querySelector(".stat-recommended");
-    const consideredTree = document.querySelector(".stat-considered-tree");
-    const notRecommendedCard = document.querySelector(".stat-not");
-
-    const isApprovalTab = activeInterviewTab === "bibit" || activeInterviewTab === "tad";
-    const statsContainer = document.querySelector(".stats");
-    if (statsContainer) statsContainer.classList.toggle("approval-mode", isApprovalTab);
-
-    if (approvalApprovedCard) approvalApprovedCard.style.display = isApprovalTab ? "" : "none";
-    if (approvalNotCard) approvalNotCard.style.display = isApprovalTab ? "" : "none";
-    if (recommendedCard) recommendedCard.style.display = isApprovalTab ? "none" : "";
-    if (consideredTree) consideredTree.style.display = isApprovalTab ? "none" : "";
-    if (notRecommendedCard) notRecommendedCard.style.display = isApprovalTab ? "none" : "";
+    // Semua statistik tetap tampil; nilainya mengikuti tab aktif.
+    document.querySelectorAll(".stat[data-tab]").forEach(card => {
+        card.style.display = "";
+    });
 
     terapkanFilter();
 }
@@ -1207,11 +1195,48 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
-                    candidate.noRegistrasi ||
                     candidate.nik ||
                     candidate.nomorKTP ||
                     "-"
                 )}
+
+            </td>
+
+
+            <td>
+
+                ${escapeHtml(
+                    candidate.email ||
+                    "-"
+                )}
+
+            </td>
+
+
+            <td>
+
+                ${escapeHtml(
+                    candidate.noHp ||
+                    candidate.nomorHP ||
+                    "-"
+                )}
+
+            </td>
+
+
+            <td>
+
+                ${escapeHtml(
+                    candidate.posisi ||
+                    "-"
+                )}
+
+            </td>
+
+
+            <td>
+
+                ${statusHTML}
 
             </td>
 
@@ -1690,19 +1715,7 @@ function updateStatistics(
             candidate.rekomendasiJabatan === "Sales TAD"
     ).length;
 
-    // Statistik persetujuan khusus tab BIBIT/TAD.
-    const approved = data.filter(candidate =>
-        String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
-    ).length;
-
-    const notApproved = data.filter(candidate => {
-        const hasil2 = String(candidate.hasilInterview2 || "").trim().toLowerCase();
-        return hasil2 === "tidak setuju" || hasil2 === "tidak disetujui";
-    }).length;
-
     setText("statTotal", total);
-    setText("statApproved", approved);
-    setText("statNotApproved", notApproved);
     setText("statRecommended", recommended);
     setText("statConsidered", considered);
     setText("statNotRecommended", notRecommended);
@@ -1711,176 +1724,110 @@ function updateStatistics(
 }
 
 // ======================================================
-// SUMMARY
+// SUMMARY / KESIMPULAN REKOMENDASI PER AREA
 // ======================================================
 
-function updateSummary(
-    data
-) {
-
-    updateJabatanSummary(
-        data
-    );
-
-
-    updateAreaSummary(
-        data
-    );
-
+function updateSummary(data) {
+    updateAreaConclusion(data);
 }
 
-
-// ======================================================
-// SUMMARY JABATAN
-// ======================================================
-
-function updateJabatanSummary(
-    data
-) {
-
-    const jabatanList = [
-
-        "FL Organik",
-
-        "Sales Organik",
-
-        "FL Bibit",
-
-        "Sales TAD"
-
-    ];
-
-
-    const element =
-        document.getElementById(
-            "summaryJabatan"
-        );
-
-
-    element.innerHTML =
-        jabatanList
-            .map(
-
-                jabatan => {
-
-                    const count =
-                        data.filter(
-
-                            candidate =>
-                                candidate
-                                    .rekomendasiJabatan ===
-                                jabatan
-
-                        ).length;
-
-
-                    return `
-
-                        <div class="
-                            summary-row
-                        ">
-
-                            <span>
-
-                                ${escapeHtml(
-                                    jabatan
-                                )}
-
-                            </span>
-
-                            <strong>
-
-                                ${count}
-
-                            </strong>
-
-                        </div>
-
-                    `;
-
-                }
-
-            )
-            .join("");
-
-}
-
-
-// ======================================================
-// SUMMARY AREA
-// ======================================================
-
-function updateAreaSummary(
-    data
-) {
-
+function updateAreaConclusion(data) {
     const areaList = [
-
         "Area Jakarta Thamrin",
-
         "Area Jakarta Barat",
-
         "Area Tangerang Selatan",
-
         "Area Banten",
-
         "RO IV Jakarta 1"
-
     ];
 
+    const element = document.getElementById("summaryConclusion");
+    if (!element) return;
 
-    const element =
-        document.getElementById(
-            "summaryArea"
+    const rows = areaList.map(area => {
+        const areaCandidates = data.filter(candidate =>
+            String(candidate.rekomendasiArea || "").trim() === area
         );
 
+        // Organik: hanya yang DISARANKAN pada Interview 1.
+        const flOrganik = areaCandidates.filter(candidate =>
+            candidate.rekomendasiJabatan === "FL Organik" &&
+            getNormalizedHasil1(candidate) === "Disarankan"
+        ).length;
 
-    element.innerHTML =
-        areaList
-            .map(
+        const salesOrganik = areaCandidates.filter(candidate =>
+            candidate.rekomendasiJabatan === "Sales Organik" &&
+            getNormalizedHasil1(candidate) === "Disarankan"
+        ).length;
 
-                area => {
+        // Bibit/TAD: hanya yang DIPERTIMBANGKAN lalu DISETUJUI Interview 2.
+        const bibit = areaCandidates.filter(candidate =>
+            candidate.rekomendasiJabatan === "FL Bibit" &&
+            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+        ).length;
 
-                    const count =
-                        data.filter(
+        const tad = areaCandidates.filter(candidate =>
+            candidate.rekomendasiJabatan === "Sales TAD" &&
+            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+        ).length;
 
-                            candidate =>
-                                candidate
-                                    .rekomendasiArea ===
-                                area
+        const total = flOrganik + salesOrganik + bibit + tad;
+        if (total === 0) return "";
 
-                        ).length;
+        const chips = [];
 
+        if (flOrganik > 0) {
+            chips.push(`
+                <div class="conclusion-chip chip-fl-organik">
+                    <span>Organik FL</span>
+                    <span class="chip-count">${flOrganik}</span>
+                </div>
+            `);
+        }
 
-                    return `
+        if (salesOrganik > 0) {
+            chips.push(`
+                <div class="conclusion-chip chip-sales-organik">
+                    <span>Organik Sales</span>
+                    <span class="chip-count">${salesOrganik}</span>
+                </div>
+            `);
+        }
 
-                        <div class="
-                            summary-row
-                        ">
+        if (bibit > 0) {
+            chips.push(`
+                <div class="conclusion-chip chip-bibit">
+                    <span>Bibit</span>
+                    <span class="chip-count">${bibit}</span>
+                </div>
+            `);
+        }
 
-                            <span>
+        if (tad > 0) {
+            chips.push(`
+                <div class="conclusion-chip chip-tad">
+                    <span>TAD Sales</span>
+                    <span class="chip-count">${tad}</span>
+                </div>
+            `);
+        }
 
-                                ${escapeHtml(
-                                    area
-                                )}
+        return `
+            <div class="area-conclusion-card">
+                <div class="area-conclusion-title">
+                    ${escapeHtml(area)}
+                </div>
+                <div class="area-conclusion-items">
+                    ${chips.join("")}
+                </div>
+            </div>
+        `;
+    }).filter(Boolean);
 
-                            </span>
-
-                            <strong>
-
-                                ${count}
-
-                            </strong>
-
-                        </div>
-
-                    `;
-
-                }
-
-            )
-            .join("");
-
+    element.innerHTML = rows.length
+        ? `<div class="area-conclusion">${rows.join("")}</div>`
+        : `<div class="summary-empty">Belum ada kandidat yang disarankan atau disetujui.</div>`;
 }
 
 
@@ -2052,7 +1999,6 @@ function buildDetailHTML(
 
             ${detailRow(
                 "NIK",
-                candidate.noRegistrasi ||
                 candidate.nik ||
                 candidate.nomorKTP
             )}
@@ -2937,7 +2883,7 @@ async function importBSPExcel() {
 
             noRegistrasi = noRegistrasi.replace(/\.0$/, "").replace(/\s/g, "");
 
-            if (!/^\d+$/.test(noRegistrasi) || !nama) {
+            if (!/^\d{7}$/.test(noRegistrasi) || !nama) {
                 invalid++;
                 return;
             }
@@ -2951,7 +2897,7 @@ async function importBSPExcel() {
         const data = Array.from(map.values());
 
         if (!data.length) {
-            throw new Error("Tidak ada data BSP valid. Pastikan No Registrasi berisi angka dan Nama terisi.");
+            throw new Error("Tidak ada data BSP valid. Pastikan format No Registrasi 7 digit dan Nama terisi.");
         }
 
         let saved = 0;
