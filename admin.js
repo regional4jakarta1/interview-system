@@ -1195,48 +1195,11 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
+                    candidate.noRegistrasi ||
                     candidate.nik ||
                     candidate.nomorKTP ||
                     "-"
                 )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.email ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.noHp ||
-                    candidate.nomorHP ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.posisi ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${statusHTML}
 
             </td>
 
@@ -2065,6 +2028,7 @@ function buildDetailHTML(
 
             ${detailRow(
                 "NIK",
+                candidate.noRegistrasi ||
                 candidate.nik ||
                 candidate.nomorKTP
             )}
