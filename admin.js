@@ -1715,12 +1715,57 @@ function updateStatistics(
             candidate.rekomendasiJabatan === "Sales TAD"
     ).length;
 
-    setText("statTotal", total);
-    setText("statRecommended", recommended);
-    setText("statConsidered", considered);
-    setText("statNotRecommended", notRecommended);
-    setText("statSetujuBibit", setujuBibit);
-    setText("statSetujuTad", setujuTad);
+    // Untuk tab BIBIT / TAD, statistik ditampilkan sebagai alur persetujuan:
+    // Total Kandidat -> Disetujui -> Tidak Disetujui.
+    // Kandidat yang belum mendapat persetujuan dihitung sebagai belum disetujui,
+    // sehingga Total = Disetujui + Tidak Disetujui.
+    const isSpecialApprovalTab =
+        activeInterviewTab === "bibit" || activeInterviewTab === "tad";
+
+    document.body.classList.toggle("approval-tab-active", isSpecialApprovalTab);
+
+    if (isSpecialApprovalTab) {
+        const approved = data.filter(candidate =>
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+        ).length;
+
+        const notApproved = Math.max(0, total - approved);
+
+        setText("statTotal", total);
+        setText("statApproved", approved);
+        setText("statNotApproved", notApproved);
+
+        const approvedCard = document.getElementById("statApprovalApprovedCard");
+        const notApprovedCard = document.getElementById("statApprovalNotCard");
+        const recommendedCard = document.querySelector(".stat-recommended");
+        const consideredTree = document.querySelector(".stat-considered-tree");
+        const notRecommendedCard = document.querySelector(".stat-not");
+
+        if (approvedCard) approvedCard.style.display = "flex";
+        if (notApprovedCard) notApprovedCard.style.display = "flex";
+        if (recommendedCard) recommendedCard.style.display = "none";
+        if (consideredTree) consideredTree.style.display = "none";
+        if (notRecommendedCard) notRecommendedCard.style.display = "none";
+    } else {
+        const approvedCard = document.getElementById("statApprovalApprovedCard");
+        const notApprovedCard = document.getElementById("statApprovalNotCard");
+        const recommendedCard = document.querySelector(".stat-recommended");
+        const consideredTree = document.querySelector(".stat-considered-tree");
+        const notRecommendedCard = document.querySelector(".stat-not");
+
+        if (approvedCard) approvedCard.style.display = "none";
+        if (notApprovedCard) notApprovedCard.style.display = "none";
+        if (recommendedCard) recommendedCard.style.display = "flex";
+        if (consideredTree) consideredTree.style.display = "grid";
+        if (notRecommendedCard) notRecommendedCard.style.display = "flex";
+
+        setText("statTotal", total);
+        setText("statRecommended", recommended);
+        setText("statConsidered", considered);
+        setText("statNotRecommended", notRecommended);
+        setText("statSetujuBibit", setujuBibit);
+        setText("statSetujuTad", setujuTad);
+    }
 }
 
 // ======================================================
