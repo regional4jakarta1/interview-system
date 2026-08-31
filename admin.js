@@ -1549,7 +1549,7 @@ function getHasil1HTML(
     // ==============================================
 
     if (
-        hasil === "TIDAK DISARANKAN" ||
+        hasil === "Tidak direkomendasikan" ||
         hasil === "tidak disarankan" ||
         hasil === "not recommended" ||
         hasil === "notrecommended"
