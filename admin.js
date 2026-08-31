@@ -1,3 +1,8 @@
+// FIXED ADMIN.JS - 2026-08-31
+// ADMIN HANYA MEREKAP HASIL YANG DISIMPAN INTERVIEWER.
+// DIPERTIMBANGKAN ditampilkan terpisah, bukan menjadi DISARANKAN.
+// Filter DOM dibuat null-safe agar tidak crash karena beda versi HTML.
+
 // ======================================================
 // ADMIN.JS
 // ADMIN DASHBOARD - INTERVIEW 1 + INTERVIEW 2
@@ -422,26 +427,15 @@ if (dateFilter) {
 // SEARCH ENTER
 // ======================================================
 
-document.getElementById(
-    "filterSearch"
-).addEventListener(
+const searchFilterElement = document.getElementById("filterSearch");
 
-    "keyup",
-
-    function(event) {
-
-        if (
-            event.key ===
-            "Enter"
-        ) {
-
+if (searchFilterElement) {
+    searchFilterElement.addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
             terapkanFilter();
-
         }
-
-    }
-
-);
+    });
+}
 
 
 // ======================================================
@@ -456,7 +450,9 @@ function buildInterviewerFilter() {
         );
 
 
-    const currentValue =
+    
+    if (!select) return;
+const currentValue =
         select.value;
 
 
@@ -570,54 +566,22 @@ window.terapkanFilter =
 
 function terapkanFilter() {
 
-    const search =
-        document.getElementById(
-            "filterSearch"
-        ).value
-            .trim()
-            .toLowerCase();
+    // Null-safe: dashboard tetap jalan walaupun HTML berbeda versi.
+    const getFilterValue = id => {
+        const el = document.getElementById(id);
+        return el && typeof el.value !== "undefined"
+            ? String(el.value).trim()
+            : "";
+    };
 
-
-    const status =
-        document.getElementById(
-            "filterStatus"
-        ).value;
-
-
-    const tahap =
-        document.getElementById(
-            "filterTahap"
-        ).value;
-
-
-    const hasil =
-        document.getElementById(
-            "filterHasil"
-        ).value;
-
-
-    const hasil2 =
-        document.getElementById(
-            "filterHasil2"
-        ).value;
-
-
-    const interviewer =
-        document.getElementById(
-            "filterInterviewer"
-        ).value;
-
-
-    const jabatan =
-        document.getElementById(
-            "filterJabatan"
-        ).value;
-
-
-    const area =
-        document.getElementById(
-            "filterArea"
-        ).value;
+    const search = getFilterValue("filterSearch").toLowerCase();
+    const status = getFilterValue("filterStatus");
+    const tahap = getFilterValue("filterTahap");
+    const hasil = getFilterValue("filterHasil");
+    const hasil2 = getFilterValue("filterHasil2");
+    const interviewer = getFilterValue("filterInterviewer");
+    const jabatan = getFilterValue("filterJabatan");
+    const area = getFilterValue("filterArea");
 
 
     filteredCandidates =
@@ -712,7 +676,12 @@ function terapkanFilter() {
                 // KATEGORI
                 // ======================================
                 if (tahap) {
-                    if (getAdminCategory(candidate) !== kategori) return false;
+                    const candidateTahap =
+                        String(candidate.tahapInterview || "");
+
+                    if (candidateTahap !== tahap) {
+                        return false;
+                    }
                 }
 
 
@@ -866,56 +835,21 @@ window.resetFilter =
 
 function resetFilter() {
 
-    document.getElementById(
-        "filterSearch"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterStatus"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterKategori"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterHasil"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterHasil2"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterInterviewer"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "filterJabatan"
-    ).value =
-        "";
-
-
-    document.getElementById(
+    [
+        "filterSearch",
+        "filterStatus",
+        "filterTahap",
+        "filterHasil",
+        "filterHasil2",
+        "filterInterviewer",
+        "filterJabatan",
         "filterArea"
-    ).value =
-        "";
-
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
 
     terapkanFilter();
-
 }
 
 
@@ -1389,21 +1323,20 @@ function getStatusHTML(
 // NORMALISASI HASIL INTERVIEW 1
 // ======================================================
 
-function getNormalizedHasil1(
-    candidate
-) {
+function getNormalizedHasil1(candidate) {
+
+    // ADMIN HANYA MEMBACA HASIL YANG DISIMPAN INTERVIEWER.
+    // Admin TIDAK menentukan hasil dari total nilai.
 
     const raw = String(
-        candidate?.hasil ?? ""
+        candidate?.hasil ??
+        candidate?.hasilInterview1 ??
+        candidate?.hasilI1 ??
+        ""
     )
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, " ");
-
-
-    // ==========================================
-    // TIDAK DIREKOMENDASIKAN
-    // ==========================================
+        .replace(/\\s+/g, " ");
 
     if (
         raw === "tidak direkomendasikan" ||
@@ -1411,30 +1344,16 @@ function getNormalizedHasil1(
         raw === "not recommended" ||
         raw === "notrecommended"
     ) {
-
         return "Tidak Direkomendasikan";
-
     }
-
-
-    // ==========================================
-    // DIPERTIMBANGKAN
-    // ==========================================
 
     if (
         raw === "dipertimbangkan" ||
         raw === "considered" ||
         raw === "pertimbangkan"
     ) {
-
         return "Dipertimbangkan";
-
     }
-
-
-    // ==========================================
-    // DISARANKAN
-    // ==========================================
 
     if (
         raw === "disarankan" ||
@@ -1443,53 +1362,10 @@ function getNormalizedHasil1(
         raw === "recommend" ||
         raw === "recommended / disarankan"
     ) {
-
         return "Disarankan";
-
     }
-
-
-    // ==========================================
-    // FALLBACK DARI NILAI INTERVIEW 1
-    // ==========================================
-    // Beberapa data lama/versi sebelumnya bisa menyimpan
-    // total dengan nama field yang berbeda. Dashboard
-    // harus tetap bisa membaca semuanya.
-
-    const totalCandidates = [
-        candidate?.totalScore,
-        candidate?.totalI1,
-        candidate?.totalInterview1,
-        candidate?.scoreTotal,
-        candidate?.total
-    ];
-
-    let total = NaN;
-
-    for (const value of totalCandidates) {
-        const n = Number(value);
-        if (Number.isFinite(n)) {
-            total = n;
-            break;
-        }
-    }
-
-    if (Number.isFinite(total)) {
-        // Sesuai penilaian Interview 1: 5 aspek x 1-5 = 25.
-        if (total >= 19) {
-            return "Disarankan";
-        }
-
-        if (total >= 15) {
-            return "Dipertimbangkan";
-        }
-
-        return "Tidak Direkomendasikan";
-    }
-
 
     return "";
-
 }
 
 
@@ -1505,29 +1381,23 @@ function getHasil1HTML(
         getNormalizedHasil1(candidate);
 
 
-    if (
-        hasil === "Dipertimbangkan" ||
-        hasil === "Disarankan"
-    ) {
-
+    if (hasil === "Disarankan") {
         return `
-
-            <span
-                class="result-recommended"
-            >
-
+            <span class="result-recommended">
                 DISARANKAN
-
             </span>
-
         `;
-
     }
 
+    if (hasil === "Dipertimbangkan") {
+        return `
+            <span class="result-considered">
+                DIPERTIMBANGKAN
+            </span>
+        `;
+    }
 
-    if (
-        hasil === "Tidak Direkomendasikan"
-    ) {
+    if (hasil === "Tidak Direkomendasikan") {
 
         return `
 
@@ -2543,12 +2413,10 @@ window.tutupDetail =
 
 
 function tutupDetail() {
-
-    document.getElementById(
-        "detailModal"
-    ).style.display =
-        "none";
-
+    const modal = document.getElementById("detailModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
 }
 
 
@@ -2556,26 +2424,15 @@ function tutupDetail() {
 // CLOSE MODAL CLICK OUTSIDE
 // ======================================================
 
-document.getElementById(
-    "detailModal"
-).addEventListener(
+const detailModalElement = document.getElementById("detailModal");
 
-    "click",
-
-    function(event) {
-
-        if (
-            event.target ===
-            this
-        ) {
-
+if (detailModalElement) {
+    detailModalElement.addEventListener("click", function(event) {
+        if (event.target === this) {
             tutupDetail();
-
         }
-
-    }
-
-);
+    });
+}
 
 
 // ======================================================
