@@ -89,12 +89,11 @@ function getAdminCategory(candidate) {
 }
 
 function gantiTabInterview(tab) {
-    const allowed = ["all", "organik", "bibit", "tad"];
+    const allowed = ["all", "bibit", "tad"];
     activeInterviewTab = allowed.includes(String(tab)) ? String(tab) : "all";
 
     const buttons = {
         all: document.getElementById("tabAdminAll"),
-        organik: document.getElementById("tabAdminOrganik"),
         bibit: document.getElementById("tabAdminBibit"),
         tad: document.getElementById("tabAdminTad")
     };
@@ -109,7 +108,6 @@ function gantiTabInterview(tab) {
     if (description) {
         description.innerText = {
             all: "Rekap keseluruhan seluruh peserta interview.",
-            organik: "Rekap kandidat dengan rekomendasi FL Organik dan Sales Organik.",
             bibit: "Rekap kandidat dengan rekomendasi FL Bibit.",
             tad: "Rekap kandidat dengan rekomendasi Sales TAD."
         }[activeInterviewTab];
