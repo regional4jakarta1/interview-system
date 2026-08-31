@@ -822,8 +822,7 @@ function terapkanFilter() {
 
                 if (
                     hasil &&
-                    candidate.hasil !==
-                        hasil
+                    getNormalizedHasil1(candidate) !== hasil
                 ) {
 
                     return false;
@@ -1501,7 +1500,7 @@ function getNormalizedHasil1(candidate) {
         raw === "not recommended" ||
         raw === "notrecommended"
     ) {
-        return "Tidak Disarankan";
+        return "Tidak Direkomendasikan";
     }
 
     if (
@@ -1538,7 +1537,7 @@ function getNormalizedHasil1(candidate) {
 
         if (total >= 19) return "Disarankan";
         if (total >= 15) return "Dipertimbangkan";
-        return "Tidak Disarankan";
+        return "Tidak Direkomendasikan";
     }
 
     return "";
@@ -1997,7 +1996,7 @@ function buildDetailHTML(
 
     if (
 
-        candidate.hasil ===
+        getNormalizedHasil1(candidate) ===
         "Tidak Direkomendasikan"
 
     ) {
@@ -2182,7 +2181,13 @@ function buildDetailHTML(
 
             ${detailRow(
                 "Hasil",
-                candidate.hasil
+                getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
+                    ? "TIDAK DISARANKAN"
+                    : getNormalizedHasil1(candidate) === "Dipertimbangkan"
+                        ? "DIPERTIMBANGKAN"
+                        : getNormalizedHasil1(candidate) === "Disarankan"
+                            ? "DISARANKAN"
+                            : candidate.hasil
             )}
 
 
@@ -2704,8 +2709,14 @@ function exportExcel() {
                         "",
 
                     "Hasil I1":
-                        candidate.hasil ||
-                        "",
+                        getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
+                            ? "TIDAK DISARANKAN"
+                            : getNormalizedHasil1(candidate) === "Dipertimbangkan"
+                                ? "DIPERTIMBANGKAN"
+                                : getNormalizedHasil1(candidate) === "Disarankan"
+                                    ? "DISARANKAN"
+                                    : candidate.hasil ||
+                                        "",
 
                     "Rekomendasi Jabatan":
                         candidate.rekomendasiJabatan ||
