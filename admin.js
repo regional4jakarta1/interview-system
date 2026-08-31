@@ -1501,7 +1501,7 @@ function getNormalizedHasil1(candidate) {
         raw === "not recommended" ||
         raw === "notrecommended"
     ) {
-        return "Tidak Direkomendasikan";
+        return "Tidak Disarankan";
     }
 
     if (
@@ -1538,7 +1538,7 @@ function getNormalizedHasil1(candidate) {
 
         if (total >= 19) return "Disarankan";
         if (total >= 15) return "Dipertimbangkan";
-        return "Tidak Direkomendasikan";
+        return "Tidak Disarankan";
     }
 
     return "";
