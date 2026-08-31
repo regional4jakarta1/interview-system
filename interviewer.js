@@ -1143,14 +1143,14 @@ function updateScore() {
     }
 
     let hasil;
-    if (total < 15) hasil = "Tidak Direkomendasikan";
+    if (total < 15) hasil = "TIDAK DISARANKAN";
     else if (total <= 18) hasil = "Dipertimbangkan";
     else hasil = "Disarankan";
 
     hasilElement.innerText = hasil.toUpperCase();
     previewHasil.innerText = hasil.toUpperCase();
 
-    if (hasil === "Tidak Direkomendasikan") {
+    if (hasil === "TIDAK DISARANKAN") {
         hasilElement.className = "result result-not";
         recommendationSection.style.display = "none";
         previewJabatanRow.style.display = "none";
@@ -1348,7 +1348,7 @@ async function submitInterview() {
     let hasil;
 
     if (total < 15) {
-        hasil = "Tidak Direkomendasikan";
+        hasil = "TIDAK DISARANKAN";
     } else if (total <= 18) {
         hasil = "Dipertimbangkan";
     } else {
