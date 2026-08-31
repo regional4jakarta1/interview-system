@@ -137,9 +137,10 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px;
             margin-bottom: 20px;
+            align-items: stretch;
         }
 
         .stat {
@@ -147,6 +148,76 @@
             padding: 17px;
             border-radius: 13px;
             box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            min-width: 0;
+        }
+
+        /* Struktur cabang Dipertimbangkan -> persetujuan I2 */
+        .stat-considered-tree {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .stat-branch {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding-left: 18px;
+        }
+
+        .stat-branch::before {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #d9d9d9;
+        }
+
+        .stat-branch-item {
+            position: relative;
+            background: white;
+            padding: 12px 13px;
+            border-radius: 11px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.05);
+            min-width: 0;
+        }
+
+        .stat-branch-item::before {
+            content: "";
+            position: absolute;
+            left: -11px;
+            top: 50%;
+            width: 11px;
+            height: 1px;
+            background: #d9d9d9;
+        }
+
+        .stat-branch-label {
+            color: #666;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        .stat-branch-number {
+            font-size: 23px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1000px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
 
         .stat-label {
@@ -938,43 +1009,32 @@
         </div>
 
         <div class="stat">
-            <div class="stat-label">Menunggu</div>
-            <div class="stat-number" id="statMenunggu">0</div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-label">Sedang Interview</div>
-            <div class="stat-number" id="statInterview">0</div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-label">Selesai</div>
-            <div class="stat-number" id="statSelesai">0</div>
-        </div>
-
-        <div class="stat">
             <div class="stat-label">Disarankan</div>
             <div class="stat-number" id="statRecommended">0</div>
         </div>
 
-        <div class="stat">
-            <div class="stat-label">Dipertimbangkan</div>
-            <div class="stat-number" id="statConsidered">0</div>
+        <div class="stat-considered-tree">
+            <div class="stat">
+                <div class="stat-label">Dipertimbangkan</div>
+                <div class="stat-number" id="statConsidered">0</div>
+            </div>
+
+            <div class="stat-branch">
+                <div class="stat-branch-item">
+                    <div class="stat-branch-label">Disetujui Bibit</div>
+                    <div class="stat-branch-number" id="statSetujuBibit">0</div>
+                </div>
+
+                <div class="stat-branch-item">
+                    <div class="stat-branch-label">Disetujui TAD</div>
+                    <div class="stat-branch-number" id="statSetujuTad">0</div>
+                </div>
+            </div>
         </div>
 
         <div class="stat">
             <div class="stat-label">Tidak Direkomendasikan</div>
             <div class="stat-number" id="statNotRecommended">0</div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-label">Setuju</div>
-            <div class="stat-number" id="statSetuju2">0</div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-label">Tidak Setuju</div>
-            <div class="stat-number" id="statTidakSetuju2">0</div>
         </div>
 
     </section>
