@@ -179,10 +179,6 @@
             align-items: stretch;
         }
 
-        .stats.approval-mode {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
         .stat {
             background: #fff;
             padding: 22px 20px;
@@ -197,26 +193,6 @@
 
         .stat.stat-total {
             background: #fff;
-        }
-
-        .stat.stat-approval-approved {
-            background: #eef9f3;
-            border: 1px solid #c8ead8;
-        }
-
-        .stat.stat-approval-approved .stat-label,
-        .stat.stat-approval-approved .stat-number {
-            color: #007a45;
-        }
-
-        .stat.stat-approval-not {
-            background: #fff0f0;
-            border: 1px solid #f2c3c3;
-        }
-
-        .stat.stat-approval-not .stat-label,
-        .stat.stat-approval-not .stat-number {
-            color: #c82333;
         }
 
         .stat.stat-recommended {
@@ -329,15 +305,13 @@
         }
 
         @media (max-width: 1000px) {
-            .stats,
-            .stats.approval-mode {
+            .stats {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 600px) {
-            .stats,
-            .stats.approval-mode {
+            .stats {
                 grid-template-columns: 1fr;
             }
 
@@ -379,6 +353,90 @@
 
         .summary-row:last-child {
             border-bottom: none;
+        }
+
+        .summary-card-wide {
+            width: 100%;
+        }
+
+        .summary-subtitle {
+            margin: -8px 0 18px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .area-conclusion {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .area-conclusion-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 15px;
+            background: #f8fafc;
+        }
+
+        .area-conclusion-title {
+            font-weight: 800;
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #0f172a;
+        }
+
+        .area-conclusion-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .conclusion-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .conclusion-chip .chip-count {
+            font-size: 17px;
+            line-height: 1;
+        }
+
+        .chip-fl-organik {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .chip-sales-organik {
+            background: #d1fae5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+
+        .chip-bibit {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .chip-tad {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .summary-empty {
+            padding: 18px;
+            text-align: center;
+            border-radius: 12px;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 14px;
         }
 
         /* ==================================================
@@ -1177,30 +1235,17 @@
 
     <section class="summary-grid" id="summarySection">
 
-        <div class="summary-card">
+        <div class="summary-card summary-card-wide">
 
             <h3>
-                Rekap Rekomendasi Jabatan
+                Kesimpulan Rekomendasi per Area
             </h3>
 
-            <div id="summaryJabatan">
+            <p class="summary-subtitle">
+                Hanya menampilkan kandidat yang <strong>DISARANKAN</strong> atau <strong>DISETUJUI</strong>.
+            </p>
 
-                <div class="loading">
-                    Memuat...
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="summary-card">
-
-            <h3>
-                Rekap Rekomendasi Area
-            </h3>
-
-            <div id="summaryArea">
+            <div id="summaryConclusion">
 
                 <div class="loading">
                     Memuat...
@@ -1261,6 +1306,13 @@
                         <th>
                             NIK
                         </th>
+<th>
+                            Posisi
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
 
                         <th>
                             Tahap
@@ -1308,7 +1360,7 @@
                     <tr>
 
                         <td
-                            colspan="13"
+                            colspan="17"
                             class="loading"
                         >
                             Memuat data...
