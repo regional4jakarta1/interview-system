@@ -1733,10 +1733,10 @@ function updateSummary(data) {
 
 function updateAreaConclusion(data) {
     const areaList = [
-        "Area Jakarta Thamrin",
         "Area Jakarta Barat",
-        "Area Tangerang Selatan",
         "Area Banten",
+        "Area Jakarta Thamrin",
+        "Area Tangerang Selatan",
         "RO IV Jakarta 1"
     ];
 
@@ -1748,7 +1748,7 @@ function updateAreaConclusion(data) {
             String(candidate.rekomendasiArea || "").trim() === area
         );
 
-        // Organik: hanya yang DISARANKAN pada Interview 1.
+        // Organik: hanya kandidat dengan hasil Interview 1 = DISARANKAN.
         const flOrganik = areaCandidates.filter(candidate =>
             candidate.rekomendasiJabatan === "FL Organik" &&
             getNormalizedHasil1(candidate) === "Disarankan"
@@ -1759,75 +1759,50 @@ function updateAreaConclusion(data) {
             getNormalizedHasil1(candidate) === "Disarankan"
         ).length;
 
-        // Bibit/TAD: hanya yang DIPERTIMBANGKAN lalu DISETUJUI Interview 2.
+        // Bibit/TAD: hanya kandidat dengan hasil Interview 2 = SETUJU.
+        const isSetuju = candidate =>
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju";
+
         const bibit = areaCandidates.filter(candidate =>
-            candidate.rekomendasiJabatan === "FL Bibit" &&
-            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+            candidate.rekomendasiJabatan === "FL Bibit" && isSetuju(candidate)
         ).length;
 
         const tad = areaCandidates.filter(candidate =>
-            candidate.rekomendasiJabatan === "Sales TAD" &&
-            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+            candidate.rekomendasiJabatan === "Sales TAD" && isSetuju(candidate)
         ).length;
 
-        const total = flOrganik + salesOrganik + bibit + tad;
-        if (total === 0) return "";
-
-        const chips = [];
-
-        if (flOrganik > 0) {
-            chips.push(`
-                <div class="conclusion-chip chip-fl-organik">
-                    <span>Organik FL</span>
-                    <span class="chip-count">${flOrganik}</span>
-                </div>
-            `);
-        }
-
-        if (salesOrganik > 0) {
-            chips.push(`
-                <div class="conclusion-chip chip-sales-organik">
-                    <span>Organik Sales</span>
-                    <span class="chip-count">${salesOrganik}</span>
-                </div>
-            `);
-        }
-
-        if (bibit > 0) {
-            chips.push(`
-                <div class="conclusion-chip chip-bibit">
-                    <span>Bibit</span>
-                    <span class="chip-count">${bibit}</span>
-                </div>
-            `);
-        }
-
-        if (tad > 0) {
-            chips.push(`
-                <div class="conclusion-chip chip-tad">
-                    <span>TAD Sales</span>
-                    <span class="chip-count">${tad}</span>
-                </div>
-            `);
-        }
-
         return `
-            <div class="area-conclusion-card">
-                <div class="area-conclusion-title">
-                    ${escapeHtml(area)}
-                </div>
-                <div class="area-conclusion-items">
-                    ${chips.join("")}
-                </div>
-            </div>
+            <tr>
+                <td class="area-name">${escapeHtml(area)}</td>
+                <td class="col-fl">${flOrganik}</td>
+                <td class="col-sales">${salesOrganik}</td>
+                <td class="col-tad">${tad}</td>
+                <td class="col-bibit">${bibit}</td>
+            </tr>
         `;
-    }).filter(Boolean);
+    }).join("");
 
-    element.innerHTML = rows.length
-        ? `<div class="area-conclusion">${rows.join("")}</div>`
-        : `<div class="summary-empty">Belum ada kandidat yang disarankan atau disetujui.</div>`;
+    element.innerHTML = `
+        <div class="area-summary-table-wrap">
+            <table class="area-summary-table">
+                <thead>
+                    <tr>
+                        <th class="th-area" rowspan="2">Area</th>
+                        <th class="th-organik" colspan="2">Organik</th>
+                        <th class="th-tad" rowspan="2">TAD Sales</th>
+                        <th class="th-bibit" rowspan="2">Bibit</th>
+                    </tr>
+                    <tr class="subhead">
+                        <th>FL</th>
+                        <th>Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
 
 
