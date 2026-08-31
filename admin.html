@@ -67,6 +67,42 @@
         }
 
         /* ==================================================
+           ADMIN SECTION TOGGLES
+           ================================================== */
+
+        .admin-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .toggle-btn {
+            background: #ffffff;
+            color: #006b3f;
+            border: 1px solid #cfe3d9;
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 800;
+            transition: .2s ease;
+        }
+
+        .toggle-btn:hover {
+            background: #eef8f3;
+        }
+
+        .toggle-btn.is-hidden {
+            background: #006b3f;
+            color: #fff;
+            border-color: #006b3f;
+        }
+
+        .section-hidden {
+            display: none !important;
+        }
+
+        /* ==================================================
            FILTER
            ================================================== */
 
@@ -76,42 +112,6 @@
             border-radius: 14px;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,.06);
-        }
-
-        /* ==================================================
-           COLLAPSIBLE SECTIONS
-           ================================================== */
-        .section-toggle-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 16px;
-        }
-
-        .section-toggle-header h2 {
-            margin: 0;
-        }
-
-        .section-toggle-button {
-            background: #007a45;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 11px;
-            min-width: 92px;
-        }
-
-        .section-toggle-button:hover {
-            background: #00663a;
-        }
-
-        .collapsible-content {
-            display: block;
-        }
-
-        .collapsible-content.is-hidden {
-            display: none;
         }
 
         .filter-grid {
@@ -180,66 +180,64 @@
         }
 
         .stat {
-            background: white;
-            padding: 24px 22px;
+            background: #fff;
+            padding: 22px 20px;
             border-radius: 14px;
             box-shadow: 0 4px 15px rgba(0,0,0,.05);
             min-width: 0;
-            min-height: 155px;
-            box-sizing: border-box;
+            min-height: 150px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
+        }
+
+        .stat.stat-total {
+            background: #fff;
+        }
+
+        .stat.stat-recommended {
+            background: #eef9f3;
+            border: 1px solid #c8ead8;
+        }
+
+        .stat.stat-considered {
+            background: #fff4e8;
+            border: 1px solid #f5d2ad;
+        }
+
+        .stat.stat-not {
+            background: #fff0f0;
+            border: 1px solid #f2c3c3;
         }
 
         .stat-label {
-            color: #555;
-            font-size: 20px;
-            line-height: 1.2;
+            font-size: 16px;
+            line-height: 1.3;
             font-weight: 700;
+            color: #333;
         }
 
         .stat-number {
-            font-size: 58px;
+            font-size: 40px;
             line-height: 1;
             font-weight: 800;
-            margin-top: 14px;
-        }
-
-        /* Warna kartu utama */
-        .stat-recommended {
-            background: #eaf7f0;
-            border: 1px solid #ccebd9;
+            margin-top: 12px;
+            color: #111;
         }
 
         .stat-recommended .stat-label,
         .stat-recommended .stat-number {
-            color: #087443;
-        }
-
-        .stat-considered {
-            background: #fff4e8;
-            border: 1px solid #f7d7b5;
+            color: #007a45;
         }
 
         .stat-considered .stat-label,
         .stat-considered .stat-number {
-            color: #c66a08;
+            color: #c96b00;
         }
 
-        .stat-not-recommended {
-            background: #fff0f0;
-            border: 1px solid #f3cccc;
-        }
-
-        .stat-not-recommended .stat-label,
-        .stat-not-recommended .stat-number {
-            color: #b4232d;
-        }
-
-        .stat-total {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
+        .stat-not .stat-label,
+        .stat-not .stat-number {
+            color: #c82333;
         }
 
         /* Struktur cabang Dipertimbangkan -> persetujuan I2 */
@@ -251,14 +249,14 @@
         }
 
         .stat-considered-tree > .stat {
-            min-height: 155px;
+            min-height: 120px;
         }
 
         .stat-branch {
             position: relative;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
             padding-left: 18px;
         }
 
@@ -269,20 +267,16 @@
             top: 0;
             bottom: 0;
             width: 2px;
-            background: #e0c9ad;
+            background: #e2c29d;
         }
 
         .stat-branch-item {
             position: relative;
-            padding: 14px 15px;
+            background: #f0faf5;
+            border: 1px solid #ccebdd;
+            padding: 13px 14px;
             border-radius: 11px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.05);
             min-width: 0;
-            min-height: 78px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
 
         .stat-branch-item::before {
@@ -292,32 +286,22 @@
             top: 50%;
             width: 11px;
             height: 2px;
-            background: #e0c9ad;
-        }
-
-        .stat-branch-bibit {
-            background: #f2faf6;
-            border: 1px solid #d5eee0;
-        }
-
-        .stat-branch-tad {
-            background: #f2faf6;
-            border: 1px solid #d5eee0;
+            background: #e2c29d;
         }
 
         .stat-branch-label {
-            color: #555;
-            font-size: 15px;
-            line-height: 1.2;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.25;
             font-weight: 700;
         }
 
         .stat-branch-number {
-            font-size: 38px;
+            color: #007a45;
+            font-size: 30px;
             line-height: 1;
             font-weight: 800;
             margin-top: 8px;
-            color: #087443;
         }
 
         @media (max-width: 1000px) {
@@ -331,25 +315,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .stat {
-                min-height: 135px;
-                padding: 20px 17px;
-            }
-
-            .stat-label {
-                font-size: 16px;
-            }
-
-            .stat-number {
-                font-size: 46px;
-            }
-
-            .stat-branch-label {
-                font-size: 14px;
-            }
-
-            .stat-branch-number {
-                font-size: 34px;
+            .stat-branch {
+                grid-template-columns: 1fr 1fr;
             }
         }
 
@@ -783,28 +750,20 @@
     </div>
 
 
-    <!-- ==================================================
+        <div class="admin-controls">
+        <button id="toggleFilterBtn" class="toggle-btn" type="button" onclick="toggleFilterSection()">SEMBUNYIKAN FILTER DATA</button>
+        <button id="toggleBspBtn" class="toggle-btn" type="button" onclick="toggleBspSection()">SEMBUNYIKAN MASTER DATA BSP</button>
+    </div>
+
+<!-- ==================================================
          FILTER
          ================================================== -->
 
-    <section class="filter-card">
+    <section class="filter-card" id="filterSection">
 
-        <div class="section-toggle-header">
-            <h2>
-                Filter Data
-            </h2>
-
-            <button
-                type="button"
-                class="section-toggle-button"
-                id="filterToggleButton"
-                onclick="toggleAdminSection('filterDataContent', 'filterToggleButton', 'filter')"
-            >
-                SEMBUNYIKAN
-            </button>
-        </div>
-
-        <div class="collapsible-content" id="filterDataContent">
+        <h2>
+            Filter Data
+        </h2>
 
         <div class="filter-grid">
 
@@ -910,8 +869,8 @@
                         Dipertimbangkan
                     </option>
 
-                    <option value="TIDAK DISARANKAN">
-                        TIDAK DISARANKAN
+                    <option value="Tidak Direkomendasikan">
+                        Tidak Direkomendasikan
                     </option>
 
                 </select>
@@ -1064,8 +1023,6 @@
 
         </div>
 
-        </div>
-
     </section>
 
 
@@ -1073,24 +1030,11 @@
          MASTER DATA BSP
          ================================================== -->
 
-    <section class="filter-card">
+    <section class="filter-card" id="bspSection">
 
-        <div class="section-toggle-header">
-            <h2>
-                Master Data BSP
-            </h2>
-
-            <button
-                type="button"
-                class="section-toggle-button"
-                id="masterToggleButton"
-                onclick="toggleAdminSection('masterDataContent', 'masterToggleButton', 'master')"
-            >
-                SEMBUNYIKAN
-            </button>
-        </div>
-
-        <div class="collapsible-content" id="masterDataContent">
+        <h2>
+            Master Data BSP
+        </h2>
 
         <p
             style="
@@ -1144,8 +1088,6 @@
             Belum ada proses import.
         </div>
 
-        </div>
-
     </section>
 
 
@@ -1161,31 +1103,31 @@
         </div>
 
         <div class="stat stat-recommended">
-            <div class="stat-label">Disarankan</div>
+            <div class="stat-label">DISARANKAN</div>
             <div class="stat-number" id="statRecommended">0</div>
         </div>
 
         <div class="stat-considered-tree">
             <div class="stat stat-considered">
-                <div class="stat-label">Dipertimbangkan</div>
+                <div class="stat-label">DIPERTIMBANGKAN</div>
                 <div class="stat-number" id="statConsidered">0</div>
             </div>
 
             <div class="stat-branch">
-                <div class="stat-branch-item stat-branch-bibit">
+                <div class="stat-branch-item">
                     <div class="stat-branch-label">Disetujui Bibit</div>
                     <div class="stat-branch-number" id="statSetujuBibit">0</div>
                 </div>
 
-                <div class="stat-branch-item stat-branch-tad">
+                <div class="stat-branch-item">
                     <div class="stat-branch-label">Disetujui TAD</div>
                     <div class="stat-branch-number" id="statSetujuTad">0</div>
                 </div>
             </div>
         </div>
 
-        <div class="stat stat-not-recommended">
-            <div class="stat-label">TIDAK DISARANKAN</div>
+        <div class="stat stat-not">
+            <div class="stat-label">TIDAK DIREKOMENDASIKAN</div>
             <div class="stat-number" id="statNotRecommended">0</div>
         </div>
 
@@ -1399,35 +1341,6 @@
 </div>
 
 
-<script>
-    // Toggle bagian Filter Data dan Master Data BSP.
-    // State disimpan agar pilihan hide/show tetap saat halaman direfresh.
-    function toggleAdminSection(contentId, buttonId, storageKey) {
-        const content = document.getElementById(contentId);
-        const button = document.getElementById(buttonId);
-        if (!content || !button) return;
-
-        const hidden = content.classList.toggle("is-hidden");
-        button.innerText = hidden ? "TAMPILKAN" : "SEMBUNYIKAN";
-        localStorage.setItem("adminSection_" + storageKey, hidden ? "hidden" : "shown");
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        [
-            ["filterDataContent", "filterToggleButton", "filter"],
-            ["masterDataContent", "masterToggleButton", "master"]
-        ].forEach(function ([contentId, buttonId, storageKey]) {
-            const saved = localStorage.getItem("adminSection_" + storageKey);
-            if (saved === "hidden") {
-                const content = document.getElementById(contentId);
-                const button = document.getElementById(buttonId);
-                if (content) content.classList.add("is-hidden");
-                if (button) button.innerText = "TAMPILKAN";
-            }
-        });
-    });
-</script>
-
 <!-- ==================================================
      SHEETJS
      ================================================== -->
@@ -1436,6 +1349,44 @@
     src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
 ></script>
 
+
+<script>
+    function setSectionVisibility(sectionId, buttonId, storageKey, label) {
+        const section = document.getElementById(sectionId);
+        const button = document.getElementById(buttonId);
+        if (!section || !button) return;
+
+        const hidden = localStorage.getItem(storageKey) === "1";
+        section.classList.toggle("section-hidden", hidden);
+        button.classList.toggle("is-hidden", hidden);
+        button.textContent = hidden ? `TAMPILKAN ${label}` : `SEMBUNYIKAN ${label}`;
+    }
+
+    function toggleSection(sectionId, buttonId, storageKey, label) {
+        const section = document.getElementById(sectionId);
+        const button = document.getElementById(buttonId);
+        if (!section || !button) return;
+
+        const hidden = !section.classList.contains("section-hidden");
+        section.classList.toggle("section-hidden", hidden);
+        button.classList.toggle("is-hidden", hidden);
+        button.textContent = hidden ? `TAMPILKAN ${label}` : `SEMBUNYIKAN ${label}`;
+        localStorage.setItem(storageKey, hidden ? "1" : "0");
+    }
+
+    function toggleFilterSection() {
+        toggleSection("filterSection", "toggleFilterBtn", "adminHideFilter", "FILTER DATA");
+    }
+
+    function toggleBspSection() {
+        toggleSection("bspSection", "toggleBspBtn", "adminHideBsp", "MASTER DATA BSP");
+    }
+
+    window.addEventListener("DOMContentLoaded", function() {
+        setSectionVisibility("filterSection", "toggleFilterBtn", "adminHideFilter", "FILTER DATA");
+        setSectionVisibility("bspSection", "toggleBspBtn", "adminHideBsp", "MASTER DATA BSP");
+    });
+</script>
 
 <!-- ==================================================
      ADMIN JS
