@@ -320,31 +320,6 @@
             }
         }
 
-        /* Statistik persetujuan untuk tab BIBIT / TAD */
-        .stats-approval {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-
-        .stat-approved {
-            background:#eefaf4;
-            border:1px solid #bfe8d2;
-        }
-
-        .stat-approved .stat-label,
-        .stat-approved .stat-number {
-            color:#007a45;
-        }
-
-        .stat-not-approved {
-            background:#fff0f1;
-            border:1px solid #f3b8be;
-        }
-
-        .stat-not-approved .stat-label,
-        .stat-not-approved .stat-number {
-            color:#c82333;
-        }
-
         /* ==================================================
            SUMMARY
            ================================================== */
@@ -714,6 +689,12 @@
             color:#666;
             font-size:13px;
         }
+
+        .stat-approval-approved { background:#ecfdf5; border:1px solid #b7e4cf; color:#008a5b; }
+        .stat-approval-approved .stat-label, .stat-approval-approved .stat-number { color:#008a5b; }
+        .stat-approval-not { background:#fff1f2; border:1px solid #fecaca; color:#dc263d; }
+        .stat-approval-not .stat-label, .stat-approval-not .stat-number { color:#dc263d; }
+
 </style>
 
 </head>
@@ -755,8 +736,7 @@
         <button type="button" class="interview-tab active" id="tabAdminAll" onclick="gantiTabInterview('all')">
             ALL
         </button>
-
-        <button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
+<button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
             BIBIT
         </button>
 
@@ -1116,12 +1096,21 @@
          STATISTICS
          ================================================== -->
 
-    <!-- STATISTICS UNTUK TAB ALL -->
-    <section class="stats" id="statsAllView">
+    <section class="stats">
 
         <div class="stat stat-total">
             <div class="stat-label">Total Kandidat</div>
             <div class="stat-number" id="statTotal">0</div>
+        </div>
+
+        <div class="stat stat-approval-approved" id="statApprovalApprovedCard" style="display:none;">
+            <div class="stat-label">DISETUJUI</div>
+            <div class="stat-number" id="statApproved">0</div>
+        </div>
+
+        <div class="stat stat-approval-not" id="statApprovalNotCard" style="display:none;">
+            <div class="stat-label">TIDAK DISETUJUI</div>
+            <div class="stat-number" id="statNotApproved">0</div>
         </div>
 
         <div class="stat stat-recommended">
@@ -1151,26 +1140,6 @@
         <div class="stat stat-not">
             <div class="stat-label">TIDAK DISARANKAN</div>
             <div class="stat-number" id="statNotRecommended">0</div>
-        </div>
-
-    </section>
-
-    <!-- STATISTICS UNTUK TAB BIBIT / TAD -->
-    <section class="stats stats-approval" id="statsApprovalView" style="display:none;">
-
-        <div class="stat stat-total">
-            <div class="stat-label">Total Kandidat</div>
-            <div class="stat-number" id="statApprovalTotal">0</div>
-        </div>
-
-        <div class="stat stat-approved">
-            <div class="stat-label">Disetujui</div>
-            <div class="stat-number" id="statApprovalApproved">0</div>
-        </div>
-
-        <div class="stat stat-not-approved">
-            <div class="stat-label">Tidak Disetujui</div>
-            <div class="stat-number" id="statApprovalNotApproved">0</div>
         </div>
 
     </section>
@@ -1266,8 +1235,7 @@
                         <th>
                             NIK
                         </th>
-
-                        <th>
+<th>
                             Posisi
                         </th>
 
@@ -1321,7 +1289,7 @@
                     <tr>
 
                         <td
-                            colspan="15"
+                            colspan="17"
                             class="loading"
                         >
                             Memuat data...
