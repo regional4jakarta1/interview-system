@@ -1545,11 +1545,11 @@ function getHasil1HTML(
 
 
     // ==============================================
-    // TIDAK DIREKOMENDASIKAN
+    // TIDAK DISARANKAN
     // ==============================================
 
     if (
-        hasil === "tidak direkomendasikan" ||
+        hasil === "TIDAK DISARANKAN" ||
         hasil === "tidak disarankan" ||
         hasil === "not recommended" ||
         hasil === "notrecommended"
@@ -1714,7 +1714,7 @@ function updateStatistics(
     ).length;
 
     const notRecommended = data.filter(
-        candidate => candidate.hasil === "Tidak Direkomendasikan"
+        candidate => candidate.hasil === "TIDAK DISARANKAN"
     ).length;
 
     // Kandidat yang masuk cabang persetujuan I2:
@@ -2016,7 +2016,7 @@ function buildDetailHTML(
     if (
 
         candidate.hasil ===
-        "Tidak Direkomendasikan"
+        "TIDAK DISARANKAN"
 
     ) {
 
