@@ -793,6 +793,27 @@
         .stat-approval-not { background:#fff1f2; border:1px solid #fecaca; color:#dc263d; }
         .stat-approval-not .stat-label, .stat-approval-not .stat-number { color:#dc263d; }
 
+        /* Tab BIBIT / TAD: hanya Total, Disetujui, Tidak Disetujui */
+        body.approval-tab-active .stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        body.approval-tab-active .stat {
+            min-height: 150px;
+        }
+
+        @media (max-width: 1000px) {
+            body.approval-tab-active .stats {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            body.approval-tab-active .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
 </style>
 
 </head>
