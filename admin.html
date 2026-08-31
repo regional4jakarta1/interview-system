@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-    
+
 <head>
     <meta charset="UTF-8">
 
@@ -318,6 +318,31 @@
             .stat-branch {
                 grid-template-columns: 1fr 1fr;
             }
+        }
+
+        /* Statistik persetujuan untuk tab BIBIT / TAD */
+        .stats-approval {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .stat-approved {
+            background:#eefaf4;
+            border:1px solid #bfe8d2;
+        }
+
+        .stat-approved .stat-label,
+        .stat-approved .stat-number {
+            color:#007a45;
+        }
+
+        .stat-not-approved {
+            background:#fff0f1;
+            border:1px solid #f3b8be;
+        }
+
+        .stat-not-approved .stat-label,
+        .stat-not-approved .stat-number {
+            color:#c82333;
         }
 
         /* ==================================================
@@ -1091,7 +1116,8 @@
          STATISTICS
          ================================================== -->
 
-    <section class="stats">
+    <!-- STATISTICS UNTUK TAB ALL -->
+    <section class="stats" id="statsAllView">
 
         <div class="stat stat-total">
             <div class="stat-label">Total Kandidat</div>
@@ -1125,6 +1151,26 @@
         <div class="stat stat-not">
             <div class="stat-label">TIDAK DISARANKAN</div>
             <div class="stat-number" id="statNotRecommended">0</div>
+        </div>
+
+    </section>
+
+    <!-- STATISTICS UNTUK TAB BIBIT / TAD -->
+    <section class="stats stats-approval" id="statsApprovalView" style="display:none;">
+
+        <div class="stat stat-total">
+            <div class="stat-label">Total Kandidat</div>
+            <div class="stat-number" id="statApprovalTotal">0</div>
+        </div>
+
+        <div class="stat stat-approved">
+            <div class="stat-label">Disetujui</div>
+            <div class="stat-number" id="statApprovalApproved">0</div>
+        </div>
+
+        <div class="stat stat-not-approved">
+            <div class="stat-label">Tidak Disetujui</div>
+            <div class="stat-number" id="statApprovalNotApproved">0</div>
         </div>
 
     </section>
