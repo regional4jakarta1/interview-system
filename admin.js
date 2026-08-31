@@ -584,9 +584,9 @@ function terapkanFilter() {
         ).value;
 
 
-    const kategori =
+    const tahap =
         document.getElementById(
-            "filterKategori"
+            "filterTahap"
         ).value;
 
 
@@ -711,7 +711,7 @@ function terapkanFilter() {
                 // ======================================
                 // KATEGORI
                 // ======================================
-                if (kategori) {
+                if (tahap) {
                     if (getAdminCategory(candidate) !== kategori) return false;
                 }
 
