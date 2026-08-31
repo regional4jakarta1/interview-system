@@ -119,10 +119,18 @@ function gantiTabInterview(tab) {
         filterKategori.value = activeInterviewTab === "all" ? "" : activeInterviewTab;
     }
 
-    // Semua statistik tetap tampil; nilainya mengikuti tab aktif.
-    document.querySelectorAll(".stat[data-tab]").forEach(card => {
-        card.style.display = "";
-    });
+    // Tab ALL menggunakan statistik hasil Interview 1.
+    // Tab BIBIT / TAD menggunakan statistik persetujuan Interview 2.
+    const statsAllView = document.getElementById("statsAllView");
+    const statsApprovalView = document.getElementById("statsApprovalView");
+    const isApprovalTab = activeInterviewTab === "bibit" || activeInterviewTab === "tad";
+
+    if (statsAllView) {
+        statsAllView.style.display = isApprovalTab ? "none" : "grid";
+    }
+    if (statsApprovalView) {
+        statsApprovalView.style.display = isApprovalTab ? "grid" : "none";
+    }
 
     terapkanFilter();
 }
@@ -1713,12 +1721,27 @@ function updateStatistics(
             candidate.rekomendasiJabatan === "Sales TAD"
     ).length;
 
+    // Statistik khusus tab BIBIT / TAD: status berdasarkan hasil Interview 2.
+    // Kandidat yang masih Menunggu tidak dimasukkan ke Disetujui maupun Tidak Disetujui.
+    const approved = data.filter(
+        candidate =>
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
+    ).length;
+
+    const notApproved = data.filter(
+        candidate =>
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "tidak setuju"
+    ).length;
+
     setText("statTotal", total);
     setText("statRecommended", recommended);
     setText("statConsidered", considered);
     setText("statNotRecommended", notRecommended);
     setText("statSetujuBibit", setujuBibit);
     setText("statSetujuTad", setujuTad);
+    setText("statApprovalTotal", total);
+    setText("statApprovalApproved", approved);
+    setText("statApprovalNotApproved", notApproved);
 }
 
 // ======================================================
