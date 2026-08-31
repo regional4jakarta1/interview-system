@@ -185,10 +185,7 @@ function getTodayKey() {
 const today = getTodayKey();
 const dateFilter = document.getElementById("filterTanggal");
 
-// Isi sementara dari cache lokal / hari ini.
-// Akan langsung ditimpa oleh tanggal global Firestore
-// jika systemConfig/interviewSettings memiliki activeDate.
-if (dateFilter && !dateFilter.value) {
+if (dateFilter) {
     dateFilter.value =
         localStorage.getItem("activeInterviewDate") ||
         today;
@@ -301,9 +298,13 @@ function loadData() {
 }
 
 
+// Load langsung berdasarkan tanggal filter agar dashboard tidak stuck di "Memuat data...".
+loadData();
+
+
 // ======================================================
 // SINKRONISASI TANGGAL GLOBAL DARI FIRESTORE
-// systemConfig/interviewSettings
+// systemConfig/interviewsettings
 // ======================================================
 
 const globalDateRef = doc(
@@ -319,22 +320,12 @@ try {
         globalDateRef,
         snapshot => {
 
-            // Jika konfigurasi tanggal belum ada,
-            // gunakan tanggal lokal sebagai fallback.
             if (!snapshot.exists()) {
-                if (dateFilter && !dateFilter.value) {
-                    dateFilter.value =
-                        localStorage.getItem("activeInterviewDate") ||
-                        today;
-                    updateTanggalHeader();
-                }
-
                 loadData();
                 return;
             }
 
             const data = snapshot.data() || {};
-
             const globalDate =
                 data.activeDate ||
                 data.tanggalInterview ||
@@ -343,29 +334,17 @@ try {
                 "";
 
             if (globalDate && dateFilter) {
+                const normalized = String(globalDate).slice(0, 10);
 
-                const normalized =
-                    String(globalDate).slice(0, 10);
-
-                if (normalized) {
+                if (dateFilter.value !== normalized) {
                     applyingGlobalDate = true;
-
-                    // Tanggal global SELALU menjadi sumber utama.
                     dateFilter.value = normalized;
-
-                    localStorage.setItem(
-                        "activeInterviewDate",
-                        normalized
-                    );
-
+                    localStorage.setItem("activeInterviewDate", normalized);
                     updateTanggalHeader();
-
                     applyingGlobalDate = false;
                 }
             }
 
-            // Setelah tanggal global diterima,
-            // baru query interviewQueue berdasarkan tanggal tersebut.
             loadData();
         },
         error => {
@@ -373,31 +352,11 @@ try {
                 "Global interview date tidak dapat dibaca:",
                 error.message
             );
-
-            // Fallback bila Firestore gagal dibaca.
-            if (dateFilter && !dateFilter.value) {
-                dateFilter.value =
-                    localStorage.getItem("activeInterviewDate") ||
-                    today;
-                updateTanggalHeader();
-            }
-
             loadData();
         }
     );
 } catch (error) {
-    console.warn(
-        "Global date listener gagal:",
-        error
-    );
-
-    if (dateFilter && !dateFilter.value) {
-        dateFilter.value =
-            localStorage.getItem("activeInterviewDate") ||
-            today;
-        updateTanggalHeader();
-    }
-
+    console.warn("Global date listener gagal:", error);
     loadData();
 }
 
@@ -422,11 +381,10 @@ if (dateFilter) {
 // SEARCH ENTER
 // ======================================================
 
-document.getElementById(
-    "filterSearch"
-).addEventListener(
-
-    "keyup",
+const filterSearchElement = document.getElementById("filterSearch");
+if (filterSearchElement) {
+    filterSearchElement.addEventListener(
+        "keyup",
 
     function(event) {
 
@@ -455,6 +413,8 @@ function buildInterviewerFilter() {
             "filterInterviewer"
         );
 
+
+    if (!select) return;
 
     const currentValue =
         select.value;
@@ -584,9 +544,9 @@ function terapkanFilter() {
         ).value;
 
 
-    const tahap =
+    const kategori =
         document.getElementById(
-            "filterTahap"
+            "filterKategori"
         ).value;
 
 
@@ -618,6 +578,9 @@ function terapkanFilter() {
         document.getElementById(
             "filterArea"
         ).value;
+
+    const tahap =
+        document.getElementById("filterTahap")?.value || "";
 
 
     filteredCandidates =
@@ -711,10 +674,16 @@ function terapkanFilter() {
                 // ======================================
                 // KATEGORI
                 // ======================================
-                if (tahap) {
+                if (kategori) {
                     if (getAdminCategory(candidate) !== kategori) return false;
                 }
 
+
+                // ======================================
+                // TAHAP INTERVIEW
+                // ======================================
+
+                if (tahap && Number(candidate.tahapInterview || 1) !== Number(tahap)) return false;
 
                 // ======================================
                 // HASIL INTERVIEW 1
@@ -883,6 +852,8 @@ function resetFilter() {
     ).value =
         "";
 
+
+    document.getElementById("filterTahap").value = "";
 
     document.getElementById(
         "filterHasil"
@@ -1390,106 +1361,28 @@ function getStatusHTML(
 // ======================================================
 
 function getNormalizedHasil1(
-    candidate
+candidate
 ) {
-
     const raw = String(
-        candidate?.hasil ?? ""
+        candidate?.hasil ?? candidate?.hasilInterview1 ?? ""
     )
         .trim()
         .toLowerCase()
         .replace(/\s+/g, " ");
 
-
-    // ==========================================
-    // TIDAK DIREKOMENDASIKAN
-    // ==========================================
-
-    if (
-        raw === "tidak direkomendasikan" ||
-        raw === "tidak disarankan" ||
-        raw === "not recommended" ||
-        raw === "notrecommended"
-    ) {
-
+    if (raw === "tidak direkomendasikan" || raw === "tidak disarankan" || raw === "not recommended" || raw === "notrecommended") {
         return "Tidak Direkomendasikan";
-
     }
-
-
-    // ==========================================
-    // DIPERTIMBANGKAN
-    // ==========================================
-
-    if (
-        raw === "dipertimbangkan" ||
-        raw === "considered" ||
-        raw === "pertimbangkan"
-    ) {
-
+    if (raw === "dipertimbangkan" || raw === "dipertimbang" || raw === "considered" || raw === "consider" || raw === "pertimbangkan") {
         return "Dipertimbangkan";
-
     }
-
-
-    // ==========================================
-    // DISARANKAN
-    // ==========================================
-
-    if (
-        raw === "disarankan" ||
-        raw === "direkomendasikan" ||
-        raw === "recommended" ||
-        raw === "recommend" ||
-        raw === "recommended / disarankan"
-    ) {
-
+    if (raw === "disarankan" || raw === "direkomendasikan" || raw === "recommended" || raw === "recommend" || raw === "recommended / disarankan") {
         return "Disarankan";
-
     }
 
-
-    // ==========================================
-    // FALLBACK DARI NILAI INTERVIEW 1
-    // ==========================================
-    // Beberapa data lama/versi sebelumnya bisa menyimpan
-    // total dengan nama field yang berbeda. Dashboard
-    // harus tetap bisa membaca semuanya.
-
-    const totalCandidates = [
-        candidate?.totalScore,
-        candidate?.totalI1,
-        candidate?.totalInterview1,
-        candidate?.scoreTotal,
-        candidate?.total
-    ];
-
-    let total = NaN;
-
-    for (const value of totalCandidates) {
-        const n = Number(value);
-        if (Number.isFinite(n)) {
-            total = n;
-            break;
-        }
-    }
-
-    if (Number.isFinite(total)) {
-        // Sesuai penilaian Interview 1: 5 aspek x 1-5 = 25.
-        if (total >= 19) {
-            return "Disarankan";
-        }
-
-        if (total >= 15) {
-            return "Dipertimbangkan";
-        }
-
-        return "Tidak Direkomendasikan";
-    }
-
-
+    // ADMIN HANYA MEMBACA HASIL YANG DISIMPAN OLEH INTERVIEWER.
+    // Tidak menentukan hasil berdasarkan total nilai.
     return "";
-
 }
 
 
@@ -1498,54 +1391,13 @@ function getNormalizedHasil1(
 // ======================================================
 
 function getHasil1HTML(
-    candidate
+candidate
 ) {
-
-    const hasil =
-        getNormalizedHasil1(candidate);
-
-
-    if (
-        hasil === "Dipertimbangkan" ||
-        hasil === "Disarankan"
-    ) {
-
-        return `
-
-            <span
-                class="result-recommended"
-            >
-
-                DISARANKAN
-
-            </span>
-
-        `;
-
-    }
-
-
-    if (
-        hasil === "Tidak Direkomendasikan"
-    ) {
-
-        return `
-
-            <span
-                class="result-not"
-            >
-
-                TIDAK DISARANKAN
-
-            </span>
-
-        `;
-
-    }
-
-
+    const hasil = getNormalizedHasil1(candidate);
+    if (hasil === "Disarankan") return `<span class="result-recommended">DISARANKAN</span>`;
+    if (hasil === "Dipertimbangkan") return `<span class="result-considered">DIPERTIMBANGKAN</span>`;
+    if (hasil === "Tidak Direkomendasikan") return `<span class="result-not">TIDAK DISARANKAN</span>`;
     return "-";
-
 }
 
 
@@ -1763,6 +1615,8 @@ function updateJabatanSummary(
         );
 
 
+    if (!element) return;
+
     element.innerHTML =
         jabatanList
             .map(
@@ -1840,6 +1694,8 @@ function updateAreaSummary(
             "summaryArea"
         );
 
+
+    if (!element) return;
 
     element.innerHTML =
         areaList
@@ -3044,6 +2900,14 @@ function escapeHtml(
 
     return div.innerHTML;
 
+}
+
+
+if (!document.getElementById("adminResultConsideredStyle")) {
+    const style = document.createElement("style");
+    style.id = "adminResultConsideredStyle";
+    style.textContent = ".result-considered{color:#856404;font-weight:bold;}";
+    document.head.appendChild(style);
 }
 
 
