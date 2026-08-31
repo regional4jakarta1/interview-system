@@ -474,7 +474,7 @@ function loadData() {
                     <tr>
 
                         <td
-                            colspan="17"
+                            colspan="15"
                             class="empty"
                         >
 
@@ -1056,7 +1056,7 @@ function renderTable(
             <tr>
 
                 <td
-                    colspan="17"
+                    colspan="15"
                     class="empty"
                 >
 
@@ -1201,29 +1201,9 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
+                    candidate.noKtp ||
                     candidate.nik ||
                     candidate.nomorKTP ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.email ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.noHp ||
-                    candidate.nomorHP ||
                     "-"
                 )}
 
@@ -2086,21 +2066,9 @@ function buildDetailHTML(
 
             ${detailRow(
                 "NIK",
+                candidate.noKtp ||
                 candidate.nik ||
                 candidate.nomorKTP
-            )}
-
-
-            ${detailRow(
-                "Email",
-                candidate.email
-            )}
-
-
-            ${detailRow(
-                "Nomor HP",
-                candidate.noHp ||
-                candidate.nomorHP
             )}
 
 
@@ -2659,17 +2627,9 @@ function exportExcel() {
                         "",
 
                     "NIK":
+                        candidate.noKtp ||
                         candidate.nik ||
                         candidate.nomorKTP ||
-                        "",
-
-                    "Email":
-                        candidate.email ||
-                        "",
-
-                    "Nomor HP":
-                        candidate.noHp ||
-                        candidate.nomorHP ||
                         "",
 
                     "Posisi":
