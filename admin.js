@@ -1486,9 +1486,23 @@ function getHasil1HTML(
     candidate
 ) {
 
+    const hasil = String(
+        candidate.hasil ||
+        candidate.hasilInterview1 ||
+        ""
+    )
+        .trim()
+        .toLowerCase();
+
+
+    // ==============================================
+    // DISARANKAN
+    // ==============================================
+
     if (
-        candidate.hasil === "Dipertimbangkan" ||
-        candidate.hasil === "Disarankan"
+        hasil === "disarankan" ||
+        hasil === "direkomendasikan" ||
+        hasil === "recommended"
     ) {
 
         return `
@@ -1506,9 +1520,39 @@ function getHasil1HTML(
     }
 
 
+    // ==============================================
+    // DIPERTIMBANGKAN
+    // ==============================================
+
     if (
-        candidate.hasil ===
-        "Tidak Direkomendasikan"
+        hasil === "dipertimbangkan" ||
+        hasil === "considered"
+    ) {
+
+        return `
+
+            <span
+                class="result-considered"
+            >
+
+                DIPERTIMBANGKAN
+
+            </span>
+
+        `;
+
+    }
+
+
+    // ==============================================
+    // TIDAK DIREKOMENDASIKAN
+    // ==============================================
+
+    if (
+        hasil === "tidak direkomendasikan" ||
+        hasil === "tidak disarankan" ||
+        hasil === "not recommended" ||
+        hasil === "notrecommended"
     ) {
 
         return `
