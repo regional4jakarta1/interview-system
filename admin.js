@@ -1482,96 +1482,92 @@ function getStatusHTML(
 // HASIL I1
 // ======================================================
 
+function getNormalizedHasil1(candidate) {
+    const raw = String(
+        candidate?.hasil ??
+        candidate?.hasilInterview1 ??
+        candidate?.hasilI1 ??
+        ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+    if (
+        raw === "tidak direkomendasikan" ||
+        raw === "tidak disarankan" ||
+        raw === "tidak direkomendasikan." ||
+        raw === "tidak disarankan." ||
+        raw === "not recommended" ||
+        raw === "notrecommended"
+    ) {
+        return "Tidak Direkomendasikan";
+    }
+
+    if (
+        raw === "dipertimbangkan" ||
+        raw === "considered" ||
+        raw === "pertimbangkan"
+    ) {
+        return "Dipertimbangkan";
+    }
+
+    if (
+        raw === "disarankan" ||
+        raw === "direkomendasikan" ||
+        raw === "recommended" ||
+        raw === "recommend" ||
+        raw === "recommended / disarankan"
+    ) {
+        return "Disarankan";
+    }
+
+    // Jika hasil tidak tersimpan, gunakan total I1 sebagai fallback
+    // agar kandidat 14/25 tetap tampil sebagai TIDAK DISARANKAN.
+    const totalCandidates = [
+        candidate?.totalScore,
+        candidate?.totalI1,
+        candidate?.totalInterview1,
+        candidate?.scoreTotal,
+        candidate?.total
+    ];
+
+    for (const value of totalCandidates) {
+        const total = Number(value);
+        if (!Number.isFinite(total)) continue;
+
+        if (total >= 19) return "Disarankan";
+        if (total >= 15) return "Dipertimbangkan";
+        return "Tidak Direkomendasikan";
+    }
+
+    return "";
+}
+
+
+// ======================================================
+// HASIL I1
+// ======================================================
+
 function getHasil1HTML(
     candidate
 ) {
 
-    const hasil = String(
-        candidate.hasil ||
-        candidate.hasilInterview1 ||
-        ""
-    )
-        .trim()
-        .toLowerCase();
+    const hasil = getNormalizedHasil1(candidate);
 
-
-    // ==============================================
-    // DISARANKAN
-    // ==============================================
-
-    if (
-        hasil === "disarankan" ||
-        hasil === "direkomendasikan" ||
-        hasil === "recommended"
-    ) {
-
-        return `
-
-            <span
-                class="result-recommended"
-            >
-
-                DISARANKAN
-
-            </span>
-
-        `;
-
+    if (hasil === "Disarankan") {
+        return `<span class="result-recommended">DISARANKAN</span>`;
     }
 
-
-    // ==============================================
-    // DIPERTIMBANGKAN
-    // ==============================================
-
-    if (
-        hasil === "dipertimbangkan" ||
-        hasil === "considered"
-    ) {
-
-        return `
-
-            <span
-                class="result-considered"
-            >
-
-                DIPERTIMBANGKAN
-
-            </span>
-
-        `;
-
+    if (hasil === "Dipertimbangkan") {
+        return `<span class="result-considered">DIPERTIMBANGKAN</span>`;
     }
 
-
-    // ==============================================
-    // TIDAK DISARANKAN
-    // ==============================================
-
-    if (
-        hasil === "Tidak direkomendasikan" ||
-        hasil === "tidak disarankan" ||
-        hasil === "not recommended" ||
-        hasil === "notrecommended"
-    ) {
-
-        return `
-
-            <span
-                class="result-not"
-            >
-
-                TIDAK DISARANKAN
-
-            </span>
-
-        `;
-
+    if (hasil === "Tidak Direkomendasikan") {
+        return `<span class="result-not">TIDAK DISARANKAN</span>`;
     }
-
 
     return "-";
-
 }
 
 
@@ -1691,30 +1687,16 @@ function updateStatistics(
 ) {
     const total = data.length;
 
-    const menunggu = data.filter(
-        candidate =>
-            candidate.status === "Menunggu" ||
-            candidate.status === "Menunggu Interview 2"
-    ).length;
-
-    const sedangInterview = data.filter(
-        candidate => candidate.status === "Sedang Interview"
-    ).length;
-
-    const selesai = data.filter(
-        candidate => candidate.status === "Selesai"
-    ).length;
-
     const recommended = data.filter(
-        candidate => candidate.hasil === "Disarankan"
+        candidate => getNormalizedHasil1(candidate) === "Disarankan"
     ).length;
 
     const considered = data.filter(
-        candidate => candidate.hasil === "Dipertimbangkan"
+        candidate => getNormalizedHasil1(candidate) === "Dipertimbangkan"
     ).length;
 
     const notRecommended = data.filter(
-        candidate => candidate.hasil === "TIDAK DISARANKAN"
+        candidate => getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
     ).length;
 
     // Kandidat yang masuk cabang persetujuan I2:
@@ -1722,15 +1704,15 @@ function updateStatistics(
     // berdasarkan rekomendasi jabatan Bibit / TAD.
     const setujuBibit = data.filter(
         candidate =>
-            candidate.hasil === "Dipertimbangkan" &&
-            candidate.hasilInterview2 === "Setuju" &&
+            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju" &&
             candidate.rekomendasiJabatan === "FL Bibit"
     ).length;
 
     const setujuTad = data.filter(
         candidate =>
-            candidate.hasil === "Dipertimbangkan" &&
-            candidate.hasilInterview2 === "Setuju" &&
+            getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
+            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju" &&
             candidate.rekomendasiJabatan === "Sales TAD"
     ).length;
 
@@ -2016,7 +1998,7 @@ function buildDetailHTML(
     if (
 
         candidate.hasil ===
-        "TIDAK DISARANKAN"
+        "Tidak Direkomendasikan"
 
     ) {
 
