@@ -89,11 +89,12 @@ function getAdminCategory(candidate) {
 }
 
 function gantiTabInterview(tab) {
-    const allowed = ["all", "bibit", "tad"];
+    const allowed = ["all", "organik", "bibit", "tad"];
     activeInterviewTab = allowed.includes(String(tab)) ? String(tab) : "all";
 
     const buttons = {
         all: document.getElementById("tabAdminAll"),
+        organik: document.getElementById("tabAdminOrganik"),
         bibit: document.getElementById("tabAdminBibit"),
         tad: document.getElementById("tabAdminTad")
     };
@@ -108,6 +109,7 @@ function gantiTabInterview(tab) {
     if (description) {
         description.innerText = {
             all: "Rekap keseluruhan seluruh peserta interview.",
+            organik: "Rekap kandidat dengan rekomendasi FL Organik dan Sales Organik.",
             bibit: "Rekap kandidat dengan rekomendasi FL Bibit.",
             tad: "Rekap kandidat dengan rekomendasi Sales TAD."
         }[activeInterviewTab];
@@ -119,21 +121,10 @@ function gantiTabInterview(tab) {
         filterKategori.value = activeInterviewTab === "all" ? "" : activeInterviewTab;
     }
 
-    // Tampilan statistik mengikuti tab aktif.
-    const isApprovalTab = activeInterviewTab === "bibit" || activeInterviewTab === "tad";
-    const approvalApprovedCard = document.getElementById("statApprovalApprovedCard");
-    const approvalNotCard = document.getElementById("statApprovalNotCard");
-    if (approvalApprovedCard) approvalApprovedCard.style.display = isApprovalTab ? "" : "none";
-    if (approvalNotCard) approvalNotCard.style.display = isApprovalTab ? "" : "none";
-    document.querySelectorAll(".all-only-stat").forEach(card => {
-        card.style.display = isApprovalTab ? "none" : "";
+    // Semua statistik tetap tampil; nilainya mengikuti tab aktif.
+    document.querySelectorAll(".stat[data-tab]").forEach(card => {
+        card.style.display = "";
     });
-    ["statRecommended", "statConsidered", "statNotRecommended"].forEach(id => {
-        const el = document.getElementById(id);
-        const card = el ? el.closest(".stat") : null;
-        if (card) card.style.display = isApprovalTab ? "none" : "";
-    });
-
 
     terapkanFilter();
 }
@@ -769,7 +760,6 @@ function terapkanFilter() {
                         " " +
 
                         String(
-                            candidate.noRegistrasi ||
                             candidate.nik ||
                             candidate.nomorKTP ||
                             ""
@@ -1205,14 +1195,36 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
-                    candidate.noRegistrasi ||
                     candidate.nik ||
                     candidate.nomorKTP ||
                     "-"
                 )}
 
             </td>
-<td>
+
+
+            <td>
+
+                ${escapeHtml(
+                    candidate.email ||
+                    "-"
+                )}
+
+            </td>
+
+
+            <td>
+
+                ${escapeHtml(
+                    candidate.noHp ||
+                    candidate.nomorHP ||
+                    "-"
+                )}
+
+            </td>
+
+
+            <td>
 
                 ${escapeHtml(
                     candidate.posisi ||
@@ -1674,21 +1686,6 @@ function updateStatistics(
 ) {
     const total = data.length;
 
-    if (activeInterviewTab === "bibit" || activeInterviewTab === "tad") {
-        const approved = data.filter(candidate =>
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
-        ).length;
-
-        const notApproved = data.filter(candidate =>
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "tidak setuju"
-        ).length;
-
-        setText("statTotal", total);
-        setText("statApproved", approved);
-        setText("statNotApproved", notApproved);
-        return;
-    }
-
     const recommended = data.filter(
         candidate => getNormalizedHasil1(candidate) === "Disarankan"
     ).length;
@@ -1701,6 +1698,9 @@ function updateStatistics(
         candidate => getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
     ).length;
 
+    // Kandidat yang masuk cabang persetujuan I2:
+    // hanya kandidat Dipertimbangkan yang kemudian disetujui
+    // berdasarkan rekomendasi jabatan Bibit / TAD.
     const setujuBibit = data.filter(
         candidate =>
             getNormalizedHasil1(candidate) === "Dipertimbangkan" &&
@@ -2065,11 +2065,25 @@ function buildDetailHTML(
 
             ${detailRow(
                 "NIK",
-                candidate.noRegistrasi ||
                 candidate.nik ||
                 candidate.nomorKTP
             )}
-${detailRow(
+
+
+            ${detailRow(
+                "Email",
+                candidate.email
+            )}
+
+
+            ${detailRow(
+                "Nomor HP",
+                candidate.noHp ||
+                candidate.nomorHP
+            )}
+
+
+            ${detailRow(
                 "Posisi",
                 candidate.posisi
             )}
@@ -2627,7 +2641,17 @@ function exportExcel() {
                         candidate.nik ||
                         candidate.nomorKTP ||
                         "",
-"Posisi":
+
+                    "Email":
+                        candidate.email ||
+                        "",
+
+                    "Nomor HP":
+                        candidate.noHp ||
+                        candidate.nomorHP ||
+                        "",
+
+                    "Posisi":
                         candidate.posisi ||
                         "",
 
@@ -2925,7 +2949,7 @@ async function importBSPExcel() {
 
             noRegistrasi = noRegistrasi.replace(/\.0$/, "").replace(/\s/g, "");
 
-            if (!/^\d{7}$/.test(noRegistrasi) || !nama) {
+            if (!/^\d+$/.test(noRegistrasi) || !nama) {
                 invalid++;
                 return;
             }
@@ -2939,7 +2963,7 @@ async function importBSPExcel() {
         const data = Array.from(map.values());
 
         if (!data.length) {
-            throw new Error("Tidak ada data BSP valid. Pastikan format No Registrasi 7 digit dan Nama terisi.");
+            throw new Error("Tidak ada data BSP valid. Pastikan No Registrasi berisi angka dan Nama terisi.");
         }
 
         let saved = 0;
