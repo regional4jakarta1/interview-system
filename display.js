@@ -1,5 +1,5 @@
 // ======================================================
-// DISPLAY.JS - FIXED REALTIME CALLING
+// DISPLAY.JS - ROBUST REALTIME CALLING
 // Firebase Timestamp compatible + realtime call detection\n\n// FIREBASE
 // ======================================================
 
@@ -295,189 +295,381 @@ function updateSoundButton() {
 
 
 // ======================================================
-// LOAD QUEUE REALTIME - DATE GLOBAL
+// LOAD QUEUE REALTIME - EVENT BASED
+// ======================================================
+//
+// Prinsip utama:
+// 1. Snapshot awal hanya menentukan kandidat yang sedang aktif.
+// 2. Setelah listener siap, setiap ADDED/MODIFIED yang merupakan
+//    panggilan baru langsung ditampilkan.
+// 3. Jadi kandidat baru tidak kalah hanya karena ada kandidat lain
+//    yang masih berstatus "Sedang Interview".
+// 4. Jika kandidat selesai, display memilih kandidat aktif terbaru.
 // ======================================================
 
 let unsubscribeQueue = null;
 
+// Kandidat yang saat ini sedang tampil di layar.
+let currentCandidateId = null;
+
+// Mencegah snapshot awal dianggap sebagai panggilan baru.
+let displayListenerReady = false;
+
+// Simpan versi event terakhir per kandidat.
+// Ini penting agar perubahan metadata kecil tidak memicu suara berulang.
+const lastKnownCallEvent = new Map();
+
+function normalizeStatus(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+function isCallingStatus(value) {
+    const status = normalizeStatus(value);
+
+    return (
+        status === "sedang interview" ||
+        status === "sedang interview 1" ||
+        status === "sedang i1" ||
+        status === "sedang interview 2" ||
+        status === "sedang i2" ||
+        status === "dipanggil" ||
+        status === "calling"
+    );
+}
+
+function isCallingCandidate(candidate) {
+    return isCallingStatus(candidate.status);
+}
+
+function candidateCallTime(candidate) {
+    const event = getCallEvent(candidate);
+    const parts = String(event).split("|");
+    const millis = Number(parts[2] || 0);
+
+    return Number.isFinite(millis) ? millis : 0;
+}
+
+function sortNewestCandidates(candidates) {
+    return candidates.sort(
+        (a, b) =>
+            candidateCallTime(b) -
+            candidateCallTime(a)
+    );
+}
+
+function showNewestActiveCandidate(activeCandidates) {
+
+    if (!activeCandidates.length) {
+        currentCandidateId = null;
+        tampilkanWaiting();
+        return;
+    }
+
+    sortNewestCandidates(activeCandidates);
+
+    const candidate =
+        activeCandidates[0];
+
+    currentCandidateId =
+        candidate.id;
+
+    tampilkanPanggilan(
+        candidate,
+        false
+    );
+}
+
 function listenDisplayQueue(tanggal) {
-    activeDate = String(tanggal || getTodayKey()).slice(0,10);
-    localStorage.setItem("activeInterviewDate", activeDate);
-    if (typeof unsubscribeQueue === "function") unsubscribeQueue();
 
-const queueQuery =
-    query(
+    activeDate =
+        String(
+            tanggal ||
+            getTodayKey()
+        ).slice(0, 10);
 
-        collection(
-            db,
-            "interviewQueue"
-        ),
-
-        where(
-            "tanggal",
-            "==",
-            activeDate
-        )
-
+    localStorage.setItem(
+        "activeInterviewDate",
+        activeDate
     );
 
+    if (
+        typeof unsubscribeQueue ===
+        "function"
+    ) {
+        unsubscribeQueue();
+    }
 
-// ======================================================
-// REALTIME LISTENER
-// ======================================================
+    // Reset state setiap tanggal berubah.
+    currentCandidateId = null;
+    displayListenerReady = false;
+    lastKnownCallEvent.clear();
 
-unsubscribeQueue = onSnapshot(
+    const queueQuery =
+        query(
+            collection(
+                db,
+                "interviewQueue"
+            ),
+            where(
+                "tanggal",
+                "==",
+                activeDate
+            )
+        );
 
-    queueQuery,
+    unsubscribeQueue =
+        onSnapshot(
+            queueQuery,
+
+            function(snapshot) {
+
+                const allCandidates = [];
+
+                snapshot.forEach(
+                    function(docSnapshot) {
+
+                        const data =
+                            docSnapshot.data() ||
+                            {};
+
+                        allCandidates.push({
+                            id:
+                                docSnapshot.id,
+                            ...data
+                        });
+                    }
+                );
+
+                // ==============================================
+                // SNAPSHOT PERTAMA
+                // ==============================================
+                //
+                // Jangan membunyikan kandidat lama saat display
+                // baru dibuka. Hanya tampilkan kandidat aktif terbaru.
+                //
+                if (!displayListenerReady) {
+
+                    const activeCandidates =
+                        allCandidates.filter(
+                            isCallingCandidate
+                        );
+
+                    activeCandidates.forEach(
+                        function(candidate) {
+                            lastKnownCallEvent.set(
+                                candidate.id,
+                                getCallEvent(candidate)
+                            );
+                        }
+                    );
+
+                    displayListenerReady = true;
+
+                    showNewestActiveCandidate(
+                        activeCandidates
+                    );
+
+                    return;
+                }
+
+                // ==============================================
+                // EVENT REALTIME
+                // ==============================================
+                //
+                // Cari dokumen yang benar-benar berubah.
+                // ADDED/MODIFIED yang menjadi panggilan aktif
+                // langsung mengambil alih layar.
+                //
+                let newestCallCandidate = null;
+                let newestCallTime = -1;
+
+                snapshot.docChanges().forEach(
+                    function(change) {
+
+                        const data =
+                            change.doc.data() ||
+                            {};
+
+                        const candidate = {
+                            id:
+                                change.doc.id,
+                            ...data
+                        };
+
+                        if (
+                            !isCallingCandidate(
+                                candidate
+                            )
+                        ) {
+
+                            // Kalau kandidat yang sedang tampil
+                            // sudah selesai, nanti dipilih kandidat aktif lain.
+                            return;
+                        }
+
+                        const event =
+                            getCallEvent(
+                                candidate
+                            );
+
+                        const previousEvent =
+                            lastKnownCallEvent.get(
+                                candidate.id
+                            );
+
+                        lastKnownCallEvent.set(
+                            candidate.id,
+                            event
+                        );
+
+                        // Hanya event yang berubah dianggap
+                        // sebagai panggilan baru.
+                        if (
+                            change.type === "added" ||
+                            change.type === "modified"
+                        ) {
+
+                            if (
+                                previousEvent ===
+                                event
+                            ) {
+                                return;
+                            }
+
+                            const eventTime =
+                                candidateCallTime(
+                                    candidate
+                                );
+
+                            if (
+                                eventTime >=
+                                newestCallTime
+                            ) {
+
+                                newestCallTime =
+                                    eventTime;
+
+                                newestCallCandidate =
+                                    candidate;
+                            }
+                        }
+                    }
+                );
+
+                // ==============================================
+                // ADA PANGGILAN BARU
+                // ==============================================
+
+                if (
+                    newestCallCandidate
+                ) {
+
+                    currentCandidateId =
+                        newestCallCandidate.id;
+
+                    tampilkanPanggilan(
+                        newestCallCandidate,
+                        true
+                    );
+
+                    return;
+                }
+
+                // ==============================================
+                // KANDIDAT YANG TAMPIL SELESAI
+                // ==============================================
+
+                const activeCandidates =
+                    allCandidates.filter(
+                        isCallingCandidate
+                    );
+
+                if (
+                    currentCandidateId &&
+                    !activeCandidates.some(
+                        candidate =>
+                            candidate.id ===
+                            currentCandidateId
+                    )
+                ) {
+
+                    showNewestActiveCandidate(
+                        activeCandidates
+                    );
+                }
+            },
+
+            function(error) {
+
+                console.error(
+                    "Display realtime error:",
+                    error
+                );
+
+                displayListenerReady = false;
+                currentCandidateId = null;
+
+                tampilkanWaiting();
+            }
+        );
+}
+
+listenDisplayQueue(
+    activeDate
+);
+
+// Ikuti tanggal global dari systemConfig.
+const globalDateRef =
+    doc(
+        db,
+        "systemConfig",
+        "interviewSettings"
+    );
+
+onSnapshot(
+    globalDateRef,
 
     function(snapshot) {
 
-        const activeCandidates =
-            [];
+        const data =
+            snapshot.exists()
+                ? (
+                    snapshot.data() ||
+                    {}
+                )
+                : {};
 
-
-        snapshot.forEach(
-            function(docSnapshot) {
-
-                const data =
-                    docSnapshot.data();
-
-
-                // ==========================================
-                // HANYA YANG SEDANG INTERVIEW
-                // ==========================================
-
-                const normalizedStatus = String(data.status || "")
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-
-                // Terima beberapa variasi status agar display tidak miss panggilan.
-                const isCalling = [
-                    "sedang interview",
-                    "sedang interview 1",
-                    "sedang i1",
-                    "sedang interview 2",
-                    "sedang i2",
-                    "dipanggil",
-                    "calling"
-                ].includes(normalizedStatus);
-
-                if (isCalling) {
-
-                    activeCandidates.push({
-
-                        id:
-                            docSnapshot.id,
-
-                        ...data
-
-                    });
-
-                }
-
-            }
-        );
-
-
-        // ==================================================
-        // TIDAK ADA PANGGILAN
-        // ==================================================
+        const tanggalGlobal =
+            data.activeDate ||
+            data.tanggalInterview ||
+            data.tanggal ||
+            data.date ||
+            "";
 
         if (
-            activeCandidates.length ===
-            0
+            tanggalGlobal &&
+            String(tanggalGlobal)
+                .slice(0, 10) !==
+            activeDate
         ) {
 
-            tampilkanWaiting();
-
-            return;
-
+            listenDisplayQueue(
+                tanggalGlobal
+            );
         }
-
-
-        // ==================================================
-        // URUTKAN BERDASARKAN EVENT PANGGILAN TERAKHIR
-        // ==================================================
-        //
-        // PRIORITAS:
-        //
-        // T1:
-        // waktuPanggilUlang
-        //
-        // T2:
-        // waktuPanggilUlangTahap2
-        //
-        // Kalau belum pernah panggil ulang:
-        //
-        // waktuMulai / waktuMulaiTahap2
-        //
-        // ==================================================
-
-        activeCandidates.sort(
-
-            function(a, b) {
-
-                const timeA =
-                    getLastCallTime(
-                        a
-                    );
-
-
-                const timeB =
-                    getLastCallTime(
-                        b
-                    );
-
-
-                return (
-                    timeB -
-                    timeA
-                );
-
-            }
-
-        );
-
-
-        const current =
-            activeCandidates[0];
-
-
-        tampilkanPanggilan(
-            current
-        );
-
     },
-
 
     function(error) {
 
-        console.error(
-            "Display error:",
-            error
+        console.warn(
+            "DISPLAY global date listener:",
+            error.message
         );
-
-        tampilkanWaiting();
-
     }
-
 );
-
-
-
-}
-
-listenDisplayQueue(activeDate);
-
-const globalDateRef = doc(db, "systemConfig", "interviewSettings");
-onSnapshot(globalDateRef, function(snapshot) {
-    const data = snapshot.exists() ? (snapshot.data() || {}) : {};
-    const tanggalGlobal = data.activeDate || data.tanggalInterview || data.tanggal || data.date || "";
-    if (tanggalGlobal && String(tanggalGlobal).slice(0,10) !== activeDate) listenDisplayQueue(tanggalGlobal);
-}, function(error) {
-    console.warn("DISPLAY global date listener:", error.message);
-});
 
 // ======================================================
 // GET LAST CALL TIME
@@ -749,7 +941,8 @@ function getCallEvent(
 // ======================================================
 
 function tampilkanPanggilan(
-    candidate
+    candidate,
+    announce = true
 ) {
 
     const nomor =
@@ -849,36 +1042,26 @@ function tampilkanPanggilan(
             candidate
         );
 
-
-    // ==================================================
-    // CEGAH EVENT YANG SAMA BERBUNYI ULANG
-    // ==================================================
-
+    // Hanya snapshot realtime setelah listener siap
+    // yang boleh memicu suara.
     if (
-        callEvent !==
-        lastCallEvent
+        announce &&
+        callEvent !== lastCallEvent
     ) {
 
         lastCallEvent =
             callEvent;
-
 
         localStorage.setItem(
             "lastCallEvent",
             callEvent
         );
 
-
-        // ==================================================
-        // SUARA
-        // ==================================================
-
         if (
             soundEnabled
         ) {
 
             setTimeout(
-
                 function() {
 
                     speakCall(
@@ -888,13 +1071,9 @@ function tampilkanPanggilan(
                     );
 
                 },
-
-                300
-
+                150
             );
-
         }
-
     }
 
 }
@@ -952,7 +1131,7 @@ function speakCall(
     // ==================================================
 
     const nomorSpeech =
-        nomor.replace(
+        String(nomor || "-").replace(
             /-/g,
             " "
         );
