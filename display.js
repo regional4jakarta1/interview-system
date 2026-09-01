@@ -1,5 +1,5 @@
 // ======================================================
-// FIREBASE
+// DISPLAY.JS - FIXED REALTIME CALLING\n// Firebase Timestamp compatible + realtime call detection\n\n// FIREBASE
 // ======================================================
 
 import {
@@ -193,9 +193,7 @@ let soundEnabled =
 //
 
 let lastCallEvent =
-    localStorage.getItem(
-        "lastCallEvent"
-    ) || "";
+    String(localStorage.getItem("lastCallEvent") || "");
 
 
 updateSoundButton();
@@ -345,8 +343,8 @@ unsubscribeQueue = onSnapshot(
                 // ==========================================
 
                 if (
-                    data.status ===
-                    "Sedang Interview"
+                    String(data.status || "").trim().toLowerCase() ===
+                    "sedang interview"
                 ) {
 
                     activeCandidates.push({
@@ -442,6 +440,8 @@ unsubscribeQueue = onSnapshot(
             error
         );
 
+        tampilkanWaiting();
+
     }
 
 );
@@ -464,6 +464,38 @@ onSnapshot(globalDateRef, function(snapshot) {
 // ======================================================
 // GET LAST CALL TIME
 // ======================================================
+
+function timestampToMillis(value) {
+
+    if (value === undefined || value === null || value === "") {
+        return 0;
+    }
+
+    // Firestore Timestamp
+    if (typeof value === "object" && typeof value.toMillis === "function") {
+        const millis = value.toMillis();
+        return Number.isFinite(millis) ? millis : 0;
+    }
+
+    // Firestore Timestamp-like object
+    if (typeof value === "object" && Number.isFinite(value.seconds)) {
+        return Number(value.seconds) * 1000 +
+            Math.floor(Number(value.nanoseconds || 0) / 1000000);
+    }
+
+    if (value instanceof Date) {
+        const millis = value.getTime();
+        return Number.isFinite(millis) ? millis : 0;
+    }
+
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    const millis = new Date(String(value)).getTime();
+    return Number.isFinite(millis) ? millis : 0;
+}
+
 
 function getLastCallTime(
     candidate
@@ -493,10 +525,9 @@ function getLastCallTime(
         ) {
 
             const time =
-                new Date(
-                    candidate
-                        .waktuPanggilUlangTahap2
-                ).getTime();
+                timestampToMillis(
+                    candidate.waktuPanggilUlangTahap2
+                );
 
 
             if (
@@ -519,10 +550,9 @@ function getLastCallTime(
         ) {
 
             const time =
-                new Date(
-                    candidate
-                        .waktuMulaiTahap2
-                ).getTime();
+                timestampToMillis(
+                    candidate.waktuMulaiTahap2
+                );
 
 
             if (
@@ -547,10 +577,9 @@ function getLastCallTime(
     ) {
 
         const time =
-            new Date(
-                candidate
-                    .waktuPanggilUlang
-            ).getTime();
+            timestampToMillis(
+                candidate.waktuPanggilUlang
+            );
 
 
         if (
@@ -573,9 +602,9 @@ function getLastCallTime(
     ) {
 
         const time =
-            new Date(
+            timestampToMillis(
                 candidate.waktuMulai
-            ).getTime();
+            );
 
 
         if (
@@ -655,50 +684,43 @@ function getCallEvent(
             1
         );
 
+    // Timestamp yang paling spesifik untuk event panggilan.
+    // Fallback ke waktu mulai dan terakhir diperbarui agar perubahan
+    // Firestore tetap dapat dikenali meskipun field panggilan tertentu kosong.
+    let waktuEvent = "";
 
-    let waktuEvent =
-        "";
-
-
-    // ==================================================
-    // TAHAP 2
-    // ==================================================
-
-    if (
-        tahap === 2
-    ) {
+    if (tahap === 2) {
 
         waktuEvent =
             candidate.waktuPanggilUlangTahap2 ||
             candidate.waktuMulaiTahap2 ||
+            candidate.waktuPanggilUlang ||
             candidate.waktuMulai ||
+            candidate.updatedAt ||
+            candidate.updated_at ||
             "";
 
-    }
-
-
-    // ==================================================
-    // TAHAP 1
-    // ==================================================
-
-    else {
+    } else {
 
         waktuEvent =
             candidate.waktuPanggilUlang ||
             candidate.waktuMulai ||
+            candidate.updatedAt ||
+            candidate.updated_at ||
             "";
 
     }
 
-
     return (
-        candidate.id +
+        String(candidate.id || "") +
         "|" +
         tahap +
         "|" +
-        String(
-            waktuEvent
-        )
+        timestampToMillis(waktuEvent) +
+        "|" +
+        String(waktuEvent && typeof waktuEvent === "object"
+            ? JSON.stringify(waktuEvent)
+            : waktuEvent)
     );
 
 }
