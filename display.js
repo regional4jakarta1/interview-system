@@ -195,6 +195,10 @@ let soundEnabled =
 let lastCallEvent =
     String(localStorage.getItem("lastCallEvent") || "");
 
+// Queue suara agar panggilan tidak saling memotong ketika event masuk berdekatan.
+let speechQueue = [];
+let speaking = false;
+
 
 updateSoundButton();
 
@@ -342,10 +346,23 @@ unsubscribeQueue = onSnapshot(
                 // HANYA YANG SEDANG INTERVIEW
                 // ==========================================
 
-                if (
-                    String(data.status || "").trim().toLowerCase() ===
-                    "sedang interview"
-                ) {
+                const normalizedStatus = String(data.status || "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+
+                // Terima beberapa variasi status agar display tidak miss panggilan.
+                const isCalling = [
+                    "sedang interview",
+                    "sedang interview 1",
+                    "sedang i1",
+                    "sedang interview 2",
+                    "sedang i2",
+                    "dipanggil",
+                    "calling"
+                ].includes(normalizedStatus);
+
+                if (isCalling) {
 
                     activeCandidates.push({
 
@@ -976,95 +993,124 @@ function speak(
         !(
             "speechSynthesis"
             in window
-        )
+        ) || !soundEnabled
     ) {
 
         return;
 
     }
 
+    speechQueue.push({ text, isInterview2 });
+    processSpeechQueue();
 
-    // ==================================================
-    // HENTIKAN SUARA SEBELUMNYA
-    // ==================================================
-
-    window.speechSynthesis.cancel();
+}
 
 
-    // ==================================================
-    // CREATE UTTERANCE
-    // ==================================================
+function processSpeechQueue() {
+
+    if (speaking || speechQueue.length === 0) return;
+
+    if (
+        !(
+            "speechSynthesis"
+            in window
+        ) || !soundEnabled
+    ) {
+
+        speechQueue = [];
+        return;
+
+    }
+
+    speaking = true;
+
+    const item = speechQueue.shift();
+
+    const voices =
+        window.speechSynthesis.getVoices();
+
+    const indonesianVoices = voices.filter(
+        voice =>
+            voice.lang &&
+            voice.lang.toLowerCase().startsWith("id")
+    );
 
     const utterance =
         new SpeechSynthesisUtterance(
-            text
+            item.text
         );
 
-
-    // ==================================================
-    // BAHASA
-    // ==================================================
-
-    utterance.lang =
-        "id-ID";
-
-
-    // ==================================================
-    // RATE
-    // ==================================================
-
-    // Sedikit diperlambat agar jelas, tetapi tetap singkat.
+    utterance.lang = "id-ID";
     utterance.rate = 0.92;
-
-
-    // Suara dibuat lebih rendah/bass.
-    // Browser tetap menentukan karakter suara berdasarkan voice yang tersedia.
     utterance.pitch = 0.72;
-
-
-    // ==================================================
-    // VOLUME
-    // ==================================================
-
-    utterance.volume =
-        1;
-
-
-    // ==================================================
-    // PILIH VOICE INDONESIA YANG TERDENGAR LEBIH MASKULIN
-    // ==================================================
-
-    const voices = window.speechSynthesis.getVoices();
-    const indonesianVoices = voices.filter(voice =>
-        voice.lang && voice.lang.toLowerCase().startsWith("id")
-    );
+    utterance.volume = 1;
 
     if (indonesianVoices.length > 0) {
+
         const maleKeywords = [
             "male", "man", "pria", "laki", "bapak",
             "andika", "dimas", "rio", "arya", "budi"
         ];
 
-        const maleVoice = indonesianVoices.find(voice => {
-            const name = String(voice.name || "").toLowerCase();
-            return maleKeywords.some(keyword => name.includes(keyword));
-        });
+        const maleVoice =
+            indonesianVoices.find(voice => {
+                const name =
+                    String(voice.name || "").toLowerCase();
 
-        // Jika voice Indonesia tidak memberi informasi gender, pakai voice
-        // Indonesia pertama dan gunakan pitch rendah sebagai fallback.
-        utterance.voice = maleVoice || indonesianVoices[0];
+                return maleKeywords.some(
+                    keyword => name.includes(keyword)
+                );
+            });
+
+        utterance.voice =
+            maleVoice || indonesianVoices[0];
     }
 
-    // ==================================================
-    // JALANKAN
-    // ==================================================
+    const finish = () => {
+        speaking = false;
+        setTimeout(processSpeechQueue, 100);
+    };
 
-    utterance.onstart = () => console.log("TTS mulai:", text);
-    utterance.onerror = (event) => console.warn("TTS gagal:", event?.error || event);
-    window.speechSynthesis.speak(utterance);
+    utterance.onstart = () =>
+        console.log("TTS mulai:", item.text);
 
+    utterance.onend = finish;
+
+    utterance.onerror = event => {
+        console.warn(
+            "TTS gagal:",
+            event?.error || event
+        );
+        finish();
+    };
+
+    try {
+        window.speechSynthesis.speak(
+            utterance
+        );
+    } catch (error) {
+        console.warn(
+            "Speech synthesis exception:",
+            error
+        );
+        finish();
+    }
 }
 
+
 if ("speechSynthesis" in window) {
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () =>
+        window.speechSynthesis.getVoices();
+
+    // Safety net untuk browser yang kadang membuat TTS stuck.
+    setInterval(() => {
+        if (
+            soundEnabled &&
+            !window.speechSynthesis.speaking &&
+            speaking
+        ) {
+            speaking = false;
+            processSpeechQueue();
+        }
+    }, 1500);
 }
