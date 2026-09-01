@@ -1,5 +1,6 @@
 // ======================================================
-// DISPLAY.JS - FIXED REALTIME CALLING\n// Firebase Timestamp compatible + realtime call detection\n\n// FIREBASE
+// DISPLAY.JS - FIXED REALTIME CALLING
+// Firebase Timestamp compatible + realtime call detection\n\n// FIREBASE
 // ======================================================
 
 import {
