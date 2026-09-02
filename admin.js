@@ -15,6 +15,7 @@ import {
     onSnapshot,
     getDoc,
     doc,
+    deleteDoc,
     writeBatch
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
@@ -468,7 +469,7 @@ function loadData() {
                     <tr>
 
                         <td
-                            colspan="17"
+                            colspan="15"
                             class="empty"
                         >
 
@@ -1050,7 +1051,7 @@ function renderTable(
             <tr>
 
                 <td
-                    colspan="17"
+                    colspan="15"
                     class="empty"
                 >
 
@@ -1195,8 +1196,8 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
-                    candidate.nik ||
-                    candidate.nomorKTP ||
+                    candidate.noRegistrasi ||
+                    candidate.id ||
                     "-"
                 )}
 
@@ -1206,37 +1207,10 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
-                    candidate.email ||
-                    "-"
+                    formatTanggalID(
+                        candidate.tanggal
+                    )
                 )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.noHp ||
-                    candidate.nomorHP ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${escapeHtml(
-                    candidate.posisi ||
-                    "-"
-                )}
-
-            </td>
-
-
-            <td>
-
-                ${statusHTML}
 
             </td>
 
@@ -1343,11 +1317,167 @@ function createTableRow(
 
             </td>
 
+
+            <td>
+
+                <button
+
+                    class="delete-button"
+
+                    onclick="
+                        hapusKandidat(
+                            '${candidate.id}',
+                            '${escapeAttr(
+                                candidate.nama || ""
+                            )}'
+                        )
+                    "
+
+                >
+
+                    HAPUS
+
+                </button>
+
+            </td>
+
         </tr>
 
     `;
 
 }
+
+
+// ======================================================
+// ESCAPE UNTUK ATRIBUT onclick
+// ======================================================
+// escapeHtml tidak cukup di dalam onclick='...' karena
+// nama seperti MA'RUF punya apostrof yang bisa memutus
+// string JavaScript-nya.
+
+function escapeAttr(
+    value
+) {
+
+    return String(value || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\r?\n/g, " ");
+}
+
+
+// ======================================================
+// HASH (SAMA PERSIS DENGAN script.js)
+// ======================================================
+// Dipakai untuk menemukan dokumen di koleksi "candidates"
+// dan "uniqueKeys", yang ID-nya adalah hash SHA-256 dari
+// NIK (bukan NIK mentah).
+
+async function hashValue(
+    value
+) {
+
+    const hashBuffer =
+        await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(value)
+        );
+
+    return Array.from(
+            new Uint8Array(hashBuffer)
+        )
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+
+// ======================================================
+// HAPUS KANDIDAT
+// ======================================================
+// Menghapus SEMUA jejak check-in kandidat dari Firestore:
+//
+//   1. interviewQueue/{nik}         -> antrian + hasil interview
+//   2. candidates/{hash(nik)}       -> arsip kandidat
+//   3. uniqueKeys/{hash("REGISTRASI:"+nik)} -> kunci anti-dobel
+//
+// Data undangan di bspCandidates SENGAJA TIDAK dihapus,
+// supaya kandidat masih bisa check-in ulang dengan NIK
+// yang sama tanpa perlu import Excel lagi.
+//
+// queueCounters juga tidak diutak-atik: nomor antrian tidak
+// mundur, jadi kandidat berikutnya tetap dapat nomor unik.
+
+async function hapusKandidat(
+    nik,
+    nama
+) {
+
+    if (
+        !confirm(
+            "Hapus kandidat berikut?\n\n" +
+            "Nama : " + (nama || "-") + "\n" +
+            "NIK  : " + nik + "\n\n" +
+            "Semua data check-in dan hasil interviewnya akan " +
+            "dihapus permanen dan TIDAK bisa dikembalikan.\n\n" +
+            "Kandidat ini masih terdaftar sebagai undangan, " +
+            "jadi dia bisa check-in lagi dengan NIK yang sama."
+        )
+    ) {
+        return;
+    }
+
+
+    try {
+
+        const candidateId =
+            await hashValue(nik);
+
+        const registrasiKey =
+            await hashValue("REGISTRASI:" + nik);
+
+
+        await Promise.all([
+
+            deleteDoc(
+                doc(db, "interviewQueue", nik)
+            ),
+
+            deleteDoc(
+                doc(db, "candidates", candidateId)
+            ),
+
+            deleteDoc(
+                doc(db, "uniqueKeys", registrasiKey)
+            )
+
+        ]);
+
+
+        // Tabel memakai onSnapshot, jadi barisnya hilang
+        // sendiri tanpa perlu reload halaman.
+
+        alert(
+            "Kandidat berhasil dihapus.\n\n" +
+            (nama || "-") + " sekarang bisa check-in lagi " +
+            "dengan NIK " + nik + "."
+        );
+
+    } catch (error) {
+
+        console.error("ERROR HAPUS KANDIDAT:", error);
+
+        alert(
+            "Gagal menghapus kandidat.\n\n" +
+            error.message
+        );
+    }
+}
+
+
+window.hapusKandidat = hapusKandidat;
 
 
 // ======================================================
