@@ -2896,14 +2896,27 @@ async function importBSPExcel() {
 
         const map = new Map();
         let invalid = 0;
+        let scientific = 0;
 
         rows.forEach(row => {
             let noRegistrasi = String(row[regColumn] ?? "").trim();
             const nama = String(row[nameColumn] ?? "").trim();
 
+            // Excel sering mengubah NIK 16 digit menjadi angka dan
+            // menampilkannya sebagai notasi ilmiah (3,27301E+15).
+            // Kalau itu terjadi digit aslinya sudah hilang, jadi baris
+            // ini ditolak dan user diberi tahu cara memperbaikinya.
+            if (/[eE]\+?\d+$/.test(noRegistrasi)) {
+                scientific++;
+                invalid++;
+                return;
+            }
+
             noRegistrasi = noRegistrasi.replace(/\.0$/, "").replace(/\s/g, "");
 
-            if (!/^\d{7}$/.test(noRegistrasi) || !nama) {
+            // Terima angka berapa pun panjangnya: No Registrasi lama
+            // (7 digit) maupun NIK (16 digit).
+            if (!/^\d+$/.test(noRegistrasi) || !nama) {
                 invalid++;
                 return;
             }
@@ -2917,7 +2930,11 @@ async function importBSPExcel() {
         const data = Array.from(map.values());
 
         if (!data.length) {
-            throw new Error("Tidak ada data BSP valid. Pastikan format No Registrasi 7 digit dan Nama terisi.");
+            throw new Error(
+                scientific
+                    ? "Tidak ada data BSP valid. Kolom NIK terbaca sebagai angka (contoh: 3,27301E+15). Di Excel: blok kolom NIK, ubah Format Cells menjadi Text, ketik/paste ulang NIK-nya, simpan, lalu import lagi."
+                    : "Tidak ada data BSP valid. Pastikan No Registrasi / NIK berupa angka dan Nama terisi."
+            );
         }
 
         let saved = 0;
@@ -2948,11 +2965,11 @@ async function importBSPExcel() {
         }
 
         if (statusElement) {
-            statusElement.innerHTML = `<strong style="color:#007a45;">Import BSP berhasil.</strong><br>${saved} data ditambahkan/diperbarui.${invalid ? `<br>${invalid} baris invalid dilewati.` : ""}`;
+            statusElement.innerHTML = `<strong style="color:#007a45;">Import BSP berhasil.</strong><br>${saved} data ditambahkan/diperbarui.${invalid ? `<br>${invalid} baris invalid dilewati.` : ""}${scientific ? `<br><strong style="color:#b02a37;">${scientific} baris NIK-nya terbaca sebagai angka (3,27301E+15). Ubah format kolom NIK di Excel menjadi Text lalu import ulang.</strong>` : ""}`;
         }
 
         fileInput.value = "";
-        alert(`Import BSP berhasil.\n\n${saved} data ditambahkan/diperbarui.${invalid ? `\n${invalid} baris invalid dilewati.` : ""}`);
+        alert(`Import BSP berhasil.\n\n${saved} data ditambahkan/diperbarui.${invalid ? `\n${invalid} baris invalid dilewati.` : ""}${scientific ? `\n\nPERHATIAN: ${scientific} baris NIK-nya terbaca sebagai angka (3,27301E+15). Ubah format kolom NIK di Excel menjadi Text, lalu import ulang.` : ""}`);
 
     } catch (error) {
         console.error("ERROR IMPORT BSP:", error);
