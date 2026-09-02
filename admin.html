@@ -567,6 +567,17 @@
             font-size: 11px;
         }
 
+        .delete-button {
+            background: #b02a37;
+            color: white;
+            padding: 7px 10px;
+            font-size: 11px;
+        }
+
+        .delete-button:hover {
+            background: #8b1f2a;
+        }
+
         /* ==================================================
            MODAL
            ================================================== */
@@ -1341,12 +1352,9 @@
                         <th>
                             NIK
                         </th>
-<th>
-                            Posisi
-                        </th>
 
                         <th>
-                            Status
+                            Tanggal Interview
                         </th>
 
                         <th>
@@ -1385,6 +1393,10 @@
                             Detail
                         </th>
 
+                        <th>
+                            Hapus
+                        </th>
+
                     </tr>
 
                 </thead>
@@ -1395,7 +1407,7 @@
                     <tr>
 
                         <td
-                            colspan="17"
+                            colspan="15"
                             class="loading"
                         >
                             Memuat data...
@@ -1502,7 +1514,7 @@
 
 <script
     type="module"
-    src="admin.js?v=20260902-1"
+    src="admin.js?v=20260902-2"
 ></script>
 
 </body>
