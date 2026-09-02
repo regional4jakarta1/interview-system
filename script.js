@@ -516,7 +516,18 @@ function normalisasiNama(
     nama
 ) {
 
-    return nama
+    return String(
+            nama || ""
+        )
+
+        // Samakan semua varian apostrof (‘ ’ ʼ ` ´)
+        // menjadi apostrof lurus ('), biar nama seperti
+        // MA'RUF dan MA’RUF dianggap sama.
+        .replace(
+            /[\u2018\u2019\u02BC\u02B9\u0060\u00B4]/g,
+            "'"
+        )
+
         .trim()
         .replace(
             /\s+/g,
@@ -1170,8 +1181,18 @@ async function checkIn() {
         }
 
 
+        // Normalisasi DULU (apostrof miring -> lurus, spasi dirapikan,
+        // huruf jadi kapital) BARU divalidasi, supaya nama hasil
+        // copy-paste dari Word/Excel tidak ikut ditolak.
+
+        nama =
+            normalisasiNama(
+                nama
+            );
+
+
         if (
-            !/^[A-Za-zÀ-ÿ.\-’'\s]+$/.test(
+            !/^[A-Za-zÀ-ÿ.\-'\s]+$/.test(
                 nama
             )
         ) {
@@ -1182,12 +1203,6 @@ async function checkIn() {
 
             return;
         }
-
-
-        nama =
-            normalisasiNama(
-                nama
-            );
 
 
         // ==============================================
