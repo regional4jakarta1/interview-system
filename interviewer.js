@@ -218,33 +218,181 @@ let interview1FormHTML = null;
 let currentCandidate =
     null;
 
+
+// Diisi "FL Bibit" / "Sales TAD" saat membuka interview kandidat
+// jalur langsung. null berarti interviewer bebas memilih jabatan.
+let jabatanTerkunci =
+    null;
+
 // ======================================================
 // TAB INTERVIEW 1 / INTERVIEW 2
 // ======================================================
 
 let activeInterviewTab = "organik";
 let latestQueueData = [];
-function isBibitCandidate(item) { return item.rekomendasiJabatan === "FL Bibit"; }
-function isTadSalesCandidate(item) { return item.rekomendasiJabatan === "Sales TAD"; }
+
+
+// ======================================================
+// JALUR KANDIDAT
+// ======================================================
+// organik -> Frontliner / Sales. Alur lama: Interview 1,
+//            bisa dilempar ke Interview 2 kalau hasilnya
+//            direkomendasikan Bibit / TAD.
+//
+// bibit    -> check-in langsung sebagai Bibit
+// tad      -> check-in langsung sebagai TAD
+//            Hanya SATU interview, langsung final.
+//
+// Data lama tidak punya field "jalur", jadi dibaca ulang
+// dari posisi supaya tetap terbaca sebagai organik.
+// ======================================================
+
+const TONE_JALUR = {
+    organik: { main: "#006b3f", dark: "#005331", soft: "#e8f3ee" },
+    bibit:   { main: "#00A39D", dark: "#00807b", soft: "#e6f6f5" },
+    tad:     { main: "#F7941E", dark: "#d97b0c", soft: "#fef3e6" }
+};
+
+const LABEL_TAB = {
+    organik: "ORGANIK",
+    bibit: "BIBIT",
+    tad: "TAD"
+};
+
+const JABATAN_JALUR = {
+    bibit: "FL Bibit",
+    tad: "Sales TAD"
+};
+
+function getJalur(item) {
+    const jalur = String(item && item.jalur || "").toLowerCase();
+    if (jalur === "bibit" || jalur === "tad" || jalur === "organik") return jalur;
+
+    const posisi = String(item && item.posisi || "").trim();
+    if (posisi === "Bibit") return "bibit";
+    if (posisi === "TAD") return "tad";
+    return "organik";
+}
+
+// true = kandidat yang check-in langsung sebagai Bibit/TAD,
+// jadi TIDAK memakai alur Interview 2.
+function isJalurLangsung(item) {
+    const jalur = getJalur(item);
+    return jalur === "bibit" || jalur === "tad";
+}
+
+function getTone(jalur) {
+    return TONE_JALUR[jalur] || TONE_JALUR.organik;
+}
+
+function getToneKandidat(item) {
+    if (isJalurLangsung(item)) return getTone(getJalur(item));
+    if (item.rekomendasiJabatan === "FL Bibit") return getTone("bibit");
+    if (item.rekomendasiJabatan === "Sales TAD") return getTone("tad");
+    return getTone("organik");
+}
+
+// Tab BIBIT berisi kandidat jalur Bibit langsung DAN limpahan
+// Interview 2 dari organik yang direkomendasikan FL Bibit.
+function isBibitCandidate(item) {
+    return getJalur(item) === "bibit" || item.rekomendasiJabatan === "FL Bibit";
+}
+
+function isTadSalesCandidate(item) {
+    return getJalur(item) === "tad" || item.rekomendasiJabatan === "Sales TAD";
+}
+
 function getVisibleCandidates(data) {
     if (activeInterviewTab === "bibit") return data.filter(isBibitCandidate);
     if (activeInterviewTab === "tad") return data.filter(isTadSalesCandidate);
-    return data.filter(item => !isBibitCandidate(item) && !isTadSalesCandidate(item));
+    return data.filter(item =>
+        getJalur(item) === "organik" &&
+        !isBibitCandidate(item) &&
+        !isTadSalesCandidate(item)
+    );
 }
+
+
+// ======================================================
+// TAB MENGIKUTI POSISI YANG DIBUKA ADMIN
+// ======================================================
+// Kalau admin membuka Frontliner/Sales, seluruh tab tampil
+// karena kandidat organik bisa dilempar ke Bibit/TAD.
+// Kalau admin HANYA membuka Bibit (atau TAD), yang tampil
+// hanya tab itu saja.
+// ======================================================
+
+let posisiAktif = ["Frontliner", "Sales"];
+let tabTersedia = ["organik", "bibit", "tad"];
+
+function hitungTabTersedia() {
+    const organikDibuka =
+        posisiAktif.includes("Frontliner") ||
+        posisiAktif.includes("Sales");
+
+    if (organikDibuka) return ["organik", "bibit", "tad"];
+
+    const hasil = [];
+    if (posisiAktif.includes("Bibit")) hasil.push("bibit");
+    if (posisiAktif.includes("TAD")) hasil.push("tad");
+
+    return hasil.length ? hasil : ["organik", "bibit", "tad"];
+}
+
 function setupInterviewTabs() {
-    if (!queueElement || document.getElementById("interviewStageTabs")) return;
-    const wrapper = document.createElement("div"); wrapper.id = "interviewStageTabs";
-    wrapper.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 18px;";
-    wrapper.innerHTML = `<button id="tabOrganik" type="button" style="border:0;padding:14px 18px;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;background:#006b3f;color:#fff;">ORGANIK</button><button id="tabBibit" type="button" style="border:1px solid #ddd;padding:14px 18px;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;background:#f4f4f4;color:#555;">BIBIT</button><button id="tabTad" type="button" style="border:1px solid #ddd;padding:14px 18px;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;background:#f4f4f4;color:#555;">TAD SALES</button>`;
-    queueElement.parentNode.insertBefore(wrapper, queueElement);
-    document.getElementById("tabOrganik").addEventListener("click", () => { activeInterviewTab = "organik"; renderQueue(latestQueueData); });
-    document.getElementById("tabBibit").addEventListener("click", () => { activeInterviewTab = "bibit"; renderQueue(latestQueueData); });
-    document.getElementById("tabTad").addEventListener("click", () => { activeInterviewTab = "tad"; renderQueue(latestQueueData); });
+    if (!queueElement) return;
+
+    tabTersedia = hitungTabTersedia();
+
+    if (!tabTersedia.includes(activeInterviewTab)) {
+        activeInterviewTab = tabTersedia[0];
+    }
+
+    let wrapper = document.getElementById("interviewStageTabs");
+
+    if (!wrapper) {
+        wrapper = document.createElement("div");
+        wrapper.id = "interviewStageTabs";
+        queueElement.parentNode.insertBefore(wrapper, queueElement);
+    }
+
+    wrapper.style.cssText =
+        "display:grid;grid-template-columns:repeat(" +
+        tabTersedia.length +
+        ",1fr);gap:10px;margin:20px 0 18px;";
+
+    wrapper.innerHTML = tabTersedia.map(key =>
+        `<button data-tab="${key}" type="button" style="border:1px solid #ddd;padding:14px 18px;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;background:#f4f4f4;color:#555;">${LABEL_TAB[key]}</button>`
+    ).join("");
+
+    wrapper.querySelectorAll("button[data-tab]").forEach(button => {
+        button.addEventListener("click", () => {
+            activeInterviewTab = button.dataset.tab;
+            renderQueue(latestQueueData);
+        });
+    });
+
+    updateInterviewTabs();
 }
+
 function updateInterviewTabs() {
-    const tabs = { organik: document.getElementById("tabOrganik"), bibit: document.getElementById("tabBibit"), tad: document.getElementById("tabTad") };
-    Object.entries(tabs).forEach(([key, el]) => { if (!el) return; const active = key === activeInterviewTab; el.style.background = active ? (key === "organik" ? "#006b3f" : "#d97706") : "#f4f4f4"; el.style.color = active ? "#fff" : "#555"; el.style.border = active ? "0" : "1px solid #ddd"; });
+    const wrapper = document.getElementById("interviewStageTabs");
+    if (!wrapper) return;
+
+    wrapper.querySelectorAll("button[data-tab]").forEach(button => {
+        const active = button.dataset.tab === activeInterviewTab;
+        const tone = getTone(button.dataset.tab);
+
+        button.style.background = active ? tone.main : "#f4f4f4";
+        button.style.color = active ? "#fff" : "#555";
+        button.style.border = active ? "0" : "1px solid #ddd";
+    });
+
+    // Warnai header halaman sesuai tab aktif.
+    const header = document.querySelector(".header");
+    if (header) header.style.background = getTone(activeInterviewTab).main;
 }
+
 setupInterviewTabs();
 
 // ======================================================
@@ -357,6 +505,20 @@ listenQueueByDate(activeDate);
 const globalDateRef = doc(db, "systemConfig", "interviewSettings");
 onSnapshot(globalDateRef, function(snapshot) {
     const data = snapshot.exists() ? (snapshot.data() || {}) : {};
+
+    // Posisi yang dibuka admin menentukan tab mana yang tampil.
+    if (Array.isArray(data.posisiAktif) && data.posisiAktif.length) {
+        posisiAktif = data.posisiAktif;
+    } else {
+        posisiAktif = ["Frontliner", "Sales"];
+    }
+
+    const tabBaru = hitungTabTersedia();
+    if (tabBaru.join("|") !== tabTersedia.join("|")) {
+        setupInterviewTabs();
+        renderQueue(latestQueueData);
+    }
+
     const tanggalGlobal = data.activeDate || data.tanggalInterview || data.tanggal || data.date || "";
     if (tanggalGlobal && String(tanggalGlobal).slice(0,10) !== activeDate) listenQueueByDate(tanggalGlobal);
 }, function(error) {
@@ -373,24 +535,35 @@ function renderQueue(data) {
     const tahap2Tab = activeInterviewTab === "bibit" || activeInterviewTab === "tad";
     let menunggu = 0, interview = 0, selesai = 0;
     visibleData.forEach(item => {
-        if (tahap2Tab) {
+        // Kandidat jalur langsung (Bibit/TAD dari check-in) selalu
+        // dihitung dengan alur Interview 1, walaupun sedang berada
+        // di tab BIBIT/TAD.
+        const pakaiAlurTahap2 = tahap2Tab && !isJalurLangsung(item);
+        const tahap = Number(item.tahapInterview || 1);
+
+        if (pakaiAlurTahap2) {
             if (item.status === "Menunggu Interview 2") menunggu++;
-            else if (item.status === "Sedang Interview" && Number(item.tahapInterview || 1) === 2) interview++;
+            else if (item.status === "Sedang Interview" && tahap === 2) interview++;
             else if (item.status === "Selesai" && item.interview2Final === true) selesai++;
         } else {
-            if (item.status === "Menunggu" && Number(item.tahapInterview || 1) === 1) menunggu++;
-            else if (item.status === "Sedang Interview" && Number(item.tahapInterview || 1) === 1) interview++;
+            if (item.status === "Menunggu" && tahap === 1) menunggu++;
+            else if (item.status === "Sedang Interview" && tahap === 1) interview++;
             else if (item.interview1Final === true) selesai++;
         }
     });
     document.getElementById("jumlahMenunggu").innerText = menunggu; document.getElementById("jumlahInterview").innerText = interview; document.getElementById("jumlahSelesai").innerText = selesai;
-    if (!visibleData.length) { queueElement.innerHTML = `<div class="empty">${activeInterviewTab === "organik" ? "Belum ada kandidat tahap pertama." : activeInterviewTab === "bibit" ? "Belum ada kandidat FL Bibit." : "Belum ada kandidat Sales TAD."}</div>`; return; }
+    if (!visibleData.length) { queueElement.innerHTML = `<div class="empty">${activeInterviewTab === "organik" ? "Belum ada kandidat tahap pertama." : activeInterviewTab === "bibit" ? "Belum ada kandidat Bibit." : "Belum ada kandidat TAD."}</div>`; return; }
     queueElement.innerHTML = visibleData.map(item => createCandidateCard(item, activeInterviewTab)).join("");
 }
 
 function createCandidateCard(item, tab = activeInterviewTab) {
     let statusClass = "status-menunggu"; if (item.status === "Sedang Interview") statusClass = "status-interview"; else if (item.status === "Selesai") statusClass = "status-selesai";
-    const currentInterviewer = getInterviewerIdentity().name; const tahap2Tab = tab === "bibit" || tab === "tad"; let action = "";
+    const currentInterviewer = getInterviewerIdentity().name;
+    // Hanya limpahan dari organik yang memakai alur Interview 2.
+    // Kandidat Bibit/TAD hasil check-in langsung tetap alur tahap 1.
+    const tahap2Tab = (tab === "bibit" || tab === "tad") && !isJalurLangsung(item);
+    const tone = getToneKandidat(item);
+    let action = "";
     if (!tahap2Tab) {
         if (item.status === "Menunggu" && Number(item.tahapInterview || 1) === 1) action = `<button class="btn-ambil" onclick="ambilKandidat('${item.id}')">AMBIL KANDIDAT</button>`;
         else if (item.status === "Sedang Interview" && Number(item.tahapInterview || 1) === 1) {
@@ -407,7 +580,7 @@ function createCandidateCard(item, tab = activeInterviewTab) {
         } else if (item.status === "Selesai" && item.interview2Final === true) action = `<button class="btn-hasil" onclick="bukaHasilFinal('${item.id}')">LIHAT HASIL FINAL</button>`;
     }
     const statusLabel = tahap2Tab ? (item.status === "Selesai" ? "Selesai Interview 2" : item.status || "-") : (item.status || "-");
-    return `<div class="candidate"><div class="queue-number">${escapeHtml(item.nomorAntrian)}</div><div class="candidate-name">${escapeHtml(item.nama)}</div><div class="position">Posisi: ${escapeHtml(item.posisi)}</div><span class="status ${statusClass}">${escapeHtml(statusLabel)}</span>${item.rekomendasiJabatan ? `<div style="margin-top:8px;font-size:13px;color:#555;">Rekomendasi: <strong>${escapeHtml(item.rekomendasiJabatan)}</strong></div>` : ""}${action}</div>`;
+    return `<div class="candidate" style="border-top:4px solid ${tone.main};"><div class="queue-number" style="color:${tone.main};">${escapeHtml(item.nomorAntrian)}</div><div class="candidate-name">${escapeHtml(item.nama)}</div><div class="position">Posisi: ${escapeHtml(item.posisi)}</div><span class="status ${statusClass}">${escapeHtml(statusLabel)}</span>${item.rekomendasiJabatan ? `<div style="margin-top:8px;font-size:13px;color:#555;">Rekomendasi: <strong>${escapeHtml(item.rekomendasiJabatan)}</strong></div>` : ""}${action}</div>`;
 }
 
 // ======================================================
@@ -926,11 +1099,35 @@ function bukaModalEdit(
 
     restoreInterview1Form();
 
+
+    // ==================================================
+    // KUNCI JABATAN UNTUK JALUR LANGSUNG
+    // ==================================================
+    // Kandidat yang check-in sebagai Bibit / TAD sudah pasti
+    // jabatannya, jadi interviewer tidak perlu (dan tidak bisa)
+    // memilih ulang. Interviewer cukup mengisi nilai + area.
+
+    jabatanTerkunci =
+        isJalurLangsung(candidate)
+            ? JABATAN_JALUR[getJalur(candidate)]
+            : null;
+
+
+    const tone =
+        getToneKandidat(candidate);
+
+
+    document.getElementById(
+        "candidateInfo"
+    ).style.borderLeft =
+        "5px solid " + tone.main;
+
+
     document.getElementById(
         "candidateInfo"
     ).innerHTML = `
 
-        <strong>
+        <strong style="color:${tone.main};">
 
             ${escapeHtml(
                 candidate.nomorAntrian
@@ -953,6 +1150,10 @@ function bukaModalEdit(
             )}
 
         </span>
+
+        ${jabatanTerkunci
+            ? `<br><span style="display:inline-block;margin-top:8px;padding:4px 12px;border-radius:14px;background:${tone.soft};color:${tone.dark};font-size:12px;font-weight:bold;">JALUR ${getJalur(candidate).toUpperCase()} &middot; SEKALI INTERVIEW</span>`
+            : ""}
 
     `;
 
@@ -1169,6 +1370,24 @@ function updateJabatanOptions(total) {
     const select = document.getElementById("rekomendasiJabatan");
     if (!select) return;
 
+    // Jalur Bibit/TAD: jabatan sudah ditentukan sejak check-in.
+    if (jabatanTerkunci) {
+        select.innerHTML =
+            `<option value="${jabatanTerkunci}">${jabatanTerkunci}</option>`;
+        select.value = jabatanTerkunci;
+        select.style.pointerEvents = "none";
+        select.style.background = "#f1f5f9";
+        select.style.fontWeight = "bold";
+
+        const preview = document.getElementById("previewJabatan");
+        if (preview) preview.innerText = jabatanTerkunci;
+        return;
+    }
+
+    select.style.pointerEvents = "";
+    select.style.background = "";
+    select.style.fontWeight = "";
+
     const current = select.value;
     let allowed = [];
 
@@ -1368,15 +1587,23 @@ async function submitInterview() {
     // KALAU DIREKOMENDASIKAN
     // ==================================================
 
+    // Kandidat jalur Bibit / TAD: jabatan sudah terkunci sejak
+    // check-in dan prosesnya berhenti di interview ini.
+    const jalurLangsung =
+        isJalurLangsung(currentCandidate);
+
+
     if (
         hasil === "Dipertimbangkan" ||
         hasil === "Disarankan"
     ) {
 
         jabatan =
-            document.getElementById(
-                "rekomendasiJabatan"
-            ).value;
+            jalurLangsung
+                ? JABATAN_JALUR[getJalur(currentCandidate)]
+                : document.getElementById(
+                      "rekomendasiJabatan"
+                  ).value;
 
 
         area =
@@ -1410,14 +1637,19 @@ async function submitInterview() {
 
         }
 
-        if (hasil === "Dipertimbangkan" && !["FL Bibit", "Sales TAD"].includes(jabatan)) {
-            alert("Total 15–18 hanya dapat memilih FL Bibit atau Sales TAD.");
-            return;
-        }
+        // Pembatasan jabatan hanya berlaku untuk jalur organik.
+        if (!jalurLangsung) {
 
-        if (hasil === "Disarankan" && !["FL Organik", "Sales Organik"].includes(jabatan)) {
-            alert("Total di atas 18 hanya dapat memilih FL Organik atau Sales Organik.");
-            return;
+            if (hasil === "Dipertimbangkan" && !["FL Bibit", "Sales TAD"].includes(jabatan)) {
+                alert("Total 15–18 hanya dapat memilih FL Bibit atau Sales TAD.");
+                return;
+            }
+
+            if (hasil === "Disarankan" && !["FL Organik", "Sales Organik"].includes(jabatan)) {
+                alert("Total di atas 18 hanya dapat memilih FL Organik atau Sales Organik.");
+                return;
+            }
+
         }
 
     }
@@ -1437,14 +1669,18 @@ async function submitInterview() {
     // TENTUKAN APAKAH BUTUH INTERVIEW 2
     // ==================================================
 
+    // Jalur langsung TIDAK PERNAH masuk Interview 2.
     const perluInterview2 =
+        !jalurLangsung &&
         (
-            jabatan ===
-            "FL Bibit"
-        ) ||
-        (
-            jabatan ===
-            "Sales TAD"
+            (
+                jabatan ===
+                "FL Bibit"
+            ) ||
+            (
+                jabatan ===
+                "Sales TAD"
+            )
         );
 
 
@@ -1482,7 +1718,11 @@ async function submitInterview() {
 
     let pesanKonfirmasi =
 
-        "Hasil Interview 1\n\n" +
+        (jalurLangsung
+            ? "Hasil Interview " +
+              getJalur(currentCandidate).toUpperCase() +
+              "\n\n"
+            : "Hasil Interview 1\n\n") +
 
         "Total: " +
         total +
@@ -1881,6 +2121,10 @@ async function submitInterview() {
             null;
 
 
+        jabatanTerkunci =
+            null;
+
+
     }
 
     catch (
@@ -2140,11 +2384,14 @@ function tampilkanHasilFinal(
 
 
     if (
-        candidate.rekomendasiJabatan ===
-        "FL Bibit" ||
+        !isJalurLangsung(candidate) &&
+        (
+            candidate.rekomendasiJabatan ===
+            "FL Bibit" ||
 
-        candidate.rekomendasiJabatan ===
-        "Sales TAD"
+            candidate.rekomendasiJabatan ===
+            "Sales TAD"
+        )
     ) {
 
         interview2HTML = `

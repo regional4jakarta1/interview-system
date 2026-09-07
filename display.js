@@ -319,6 +319,53 @@ let displayListenerReady = false;
 // Ini penting agar perubahan metadata kecil tidak memicu suara berulang.
 const lastKnownCallEvent = new Map();
 
+// ======================================================
+// JALUR + TONE WARNA
+// ======================================================
+// Warna layar panggilan mengikuti jalur kandidat:
+//
+//   organik            -> hijau BSI
+//   Bibit (langsung)   -> tosca
+//   TAD (langsung)     -> oren
+//   limpahan Interview 2 -> mengikuti rekomendasi jabatannya
+//                           (FL Bibit tosca, Sales TAD oren)
+// ======================================================
+
+const TONE_JALUR = {
+    organik: { main: "#007a45", soft: "#e8f3ee" },
+    bibit:   { main: "#00A39D", soft: "#e6f6f5" },
+    tad:     { main: "#F7941E", soft: "#fef3e6" }
+};
+
+function getJalur(item) {
+    const jalur = String(item && item.jalur || "").toLowerCase();
+    if (jalur === "bibit" || jalur === "tad" || jalur === "organik") return jalur;
+
+    const posisi = String(item && item.posisi || "").trim();
+    if (posisi === "Bibit") return "bibit";
+    if (posisi === "TAD") return "tad";
+    return "organik";
+}
+
+function isJalurLangsung(item) {
+    const jalur = getJalur(item);
+    return jalur === "bibit" || jalur === "tad";
+}
+
+function getToneKandidat(candidate) {
+    if (isJalurLangsung(candidate)) {
+        return TONE_JALUR[getJalur(candidate)];
+    }
+
+    if (Number(candidate.tahapInterview || 1) === 2) {
+        if (candidate.rekomendasiJabatan === "FL Bibit") return TONE_JALUR.bibit;
+        if (candidate.rekomendasiJabatan === "Sales TAD") return TONE_JALUR.tad;
+    }
+
+    return TONE_JALUR.organik;
+}
+
+
 function normalizeStatus(value) {
     return String(value || "")
         .trim()
@@ -1010,26 +1057,31 @@ function tampilkanPanggilan(
     //
     // ==================================================
 
-    if (
-        tahapAktif === 2
-    ) {
+    const tone =
+        getToneKandidat(candidate);
 
-        nomorAntrian.style.color =
-            "#f28c28";
 
-        nomorMeja.style.color =
-            "#f28c28";
+    nomorAntrian.style.color =
+        tone.main;
 
+
+    nomorMeja.style.color =
+        tone.main;
+
+
+    const logoElement =
+        document.querySelector(".logo");
+
+    if (logoElement) {
+        logoElement.style.color = tone.main;
     }
 
-    else {
 
-        nomorAntrian.style.color =
-            "";
+    const dotElement =
+        document.querySelector(".live-dot");
 
-        nomorMeja.style.color =
-            "";
-
+    if (dotElement) {
+        dotElement.style.background = tone.main;
     }
 
 

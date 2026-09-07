@@ -80,13 +80,81 @@ let activeInterviewTab = "all";
 
 window.gantiTabInterview = gantiTabInterview;
 
+// ======================================================
+// JALUR KANDIDAT
+// ======================================================
+// organik -> Frontliner / Sales (bisa dilempar ke Interview 2)
+// bibit   -> check-in langsung sebagai Bibit
+// tad     -> check-in langsung sebagai TAD
+//
+// Data lama tidak punya field "jalur", jadi dibaca ulang dari
+// posisi supaya tetap terhitung sebagai organik.
+// ======================================================
+
+const TONE_JALUR = {
+    organik: "#007a45",
+    bibit: "#00A39D",
+    tad: "#F7941E"
+};
+
+function getJalur(candidate) {
+    const jalur = String(candidate && candidate.jalur || "").toLowerCase();
+    if (jalur === "bibit" || jalur === "tad" || jalur === "organik") return jalur;
+
+    const posisi = String(candidate && candidate.posisi || "").trim();
+    if (posisi === "Bibit") return "bibit";
+    if (posisi === "TAD") return "tad";
+    return "organik";
+}
+
+function isJalurLangsung(candidate) {
+    const jalur = getJalur(candidate);
+    return jalur === "bibit" || jalur === "tad";
+}
+
+function getToneKandidat(candidate) {
+    if (isJalurLangsung(candidate)) return TONE_JALUR[getJalur(candidate)];
+    if (candidate.rekomendasiJabatan === "FL Bibit") return TONE_JALUR.bibit;
+    if (candidate.rekomendasiJabatan === "Sales TAD") return TONE_JALUR.tad;
+    return TONE_JALUR.organik;
+}
+
+// Kategori rekap: kandidat jalur langsung SELALU masuk kategori
+// jalurnya, tidak peduli hasil interviewnya. Kandidat organik
+// dikategorikan dari rekomendasi jabatan hasil Interview 1.
 function getAdminCategory(candidate) {
+    if (isJalurLangsung(candidate)) return getJalur(candidate);
+
     const jabatan = String(candidate.rekomendasiJabatan || "").trim();
 
     if (jabatan === "FL Organik" || jabatan === "Sales Organik") return "organik";
     if (jabatan === "FL Bibit") return "bibit";
     if (jabatan === "Sales TAD") return "tad";
     return "other";
+}
+
+
+// ======================================================
+// HASIL AKHIR (SATU KACAMATA)
+// ======================================================
+// Tab BIBIT/TAD bisa berisi dua macam kandidat:
+//
+//   1. limpahan organik -> hasil akhirnya Interview 2
+//      (Setuju / Tidak Setuju)
+//   2. check-in langsung -> hasil akhirnya Interview 1
+//      (Disarankan / Dipertimbangkan / Tidak Disarankan)
+//
+// Supaya bisa dijumlahkan bersama, "Setuju" dibaca sebagai
+// DISARANKAN dan "Tidak Setuju" sebagai TIDAK DISARANKAN.
+// ======================================================
+
+function getHasilAkhir(candidate) {
+    const hasil2 = String(candidate.hasilInterview2 || "").trim().toLowerCase();
+
+    if (hasil2 === "setuju") return "Disarankan";
+    if (hasil2 === "tidak setuju") return "Tidak Direkomendasikan";
+
+    return getNormalizedHasil1(candidate);
 }
 
 function gantiTabInterview(tab) {
@@ -761,23 +829,15 @@ function terapkanFilter() {
                         " " +
 
                         String(
-                            candidate.nik ||
-                            candidate.nomorKTP ||
+                            candidate.noRegistrasi ||
+                            candidate.id ||
                             ""
                         ) +
 
                         " " +
 
                         String(
-                            candidate.email ||
-                            ""
-                        ) +
-
-                        " " +
-
-                        String(
-                            candidate.noHp ||
-                            candidate.nomorHP ||
+                            candidate.posisi ||
                             ""
                         )
 
@@ -1167,6 +1227,7 @@ function createTableRow(
 
                 <span
                     class="queue-number"
+                    style="color:${getToneKandidat(candidate)};"
                 >
 
                     ${escapeHtml(
@@ -1849,53 +1910,57 @@ function updateStatistics(
     // Total Kandidat -> Disetujui -> Tidak Disetujui.
     // Kandidat yang belum mendapat persetujuan dihitung sebagai belum disetujui,
     // sehingga Total = Disetujui + Tidak Disetujui.
-    const isSpecialApprovalTab =
+    // Tab BIBIT / TAD memakai satu kacamata yang sama dengan
+    // organik: Disarankan / Dipertimbangkan / Tidak Disarankan.
+    // "Setuju" dari Interview 2 dibaca sebagai DISARANKAN.
+    const isJalurTab =
         activeInterviewTab === "bibit" || activeInterviewTab === "tad";
 
-    document.body.classList.toggle("approval-tab-active", isSpecialApprovalTab);
+    document.body.classList.remove("approval-tab-active");
 
-    if (isSpecialApprovalTab) {
-        const approved = data.filter(candidate =>
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju"
-        ).length;
+    const approvedCard = document.getElementById("statApprovalApprovedCard");
+    const notApprovedCard = document.getElementById("statApprovalNotCard");
+    const recommendedCard = document.querySelector(".stat-recommended");
+    const consideredTree = document.querySelector(".stat-considered-tree");
+    const consideredBranch = document.querySelector(".stat-branch");
+    const notRecommendedCard = document.querySelector(".stat-not");
 
-        const notApproved = Math.max(0, total - approved);
+    // Kartu persetujuan lama tidak dipakai lagi.
+    if (approvedCard) approvedCard.style.display = "none";
+    if (notApprovedCard) notApprovedCard.style.display = "none";
+    if (recommendedCard) recommendedCard.style.display = "flex";
+    if (consideredTree) consideredTree.style.display = "grid";
+    if (notRecommendedCard) notRecommendedCard.style.display = "flex";
 
-        setText("statTotal", total);
-        setText("statApproved", approved);
-        setText("statNotApproved", notApproved);
-
-        const approvedCard = document.getElementById("statApprovalApprovedCard");
-        const notApprovedCard = document.getElementById("statApprovalNotCard");
-        const recommendedCard = document.querySelector(".stat-recommended");
-        const consideredTree = document.querySelector(".stat-considered-tree");
-        const notRecommendedCard = document.querySelector(".stat-not");
-
-        if (approvedCard) approvedCard.style.display = "flex";
-        if (notApprovedCard) notApprovedCard.style.display = "flex";
-        if (recommendedCard) recommendedCard.style.display = "none";
-        if (consideredTree) consideredTree.style.display = "none";
-        if (notRecommendedCard) notRecommendedCard.style.display = "none";
-    } else {
-        const approvedCard = document.getElementById("statApprovalApprovedCard");
-        const notApprovedCard = document.getElementById("statApprovalNotCard");
-        const recommendedCard = document.querySelector(".stat-recommended");
-        const consideredTree = document.querySelector(".stat-considered-tree");
-        const notRecommendedCard = document.querySelector(".stat-not");
-
-        if (approvedCard) approvedCard.style.display = "none";
-        if (notApprovedCard) notApprovedCard.style.display = "none";
-        if (recommendedCard) recommendedCard.style.display = "flex";
-        if (consideredTree) consideredTree.style.display = "grid";
-        if (notRecommendedCard) notRecommendedCard.style.display = "flex";
-
-        setText("statTotal", total);
-        setText("statRecommended", recommended);
-        setText("statConsidered", considered);
-        setText("statNotRecommended", notRecommended);
-        setText("statSetujuBibit", setujuBibit);
-        setText("statSetujuTad", setujuTad);
+    // Cabang "Disetujui Bibit / TAD" hanya relevan di tab ALL,
+    // karena di tab BIBIT/TAD semuanya memang sudah Bibit/TAD.
+    if (consideredBranch) {
+        consideredBranch.style.display = isJalurTab ? "none" : "grid";
     }
+
+    if (isJalurTab) {
+        setText("statTotal", total);
+        setText(
+            "statRecommended",
+            data.filter(c => getHasilAkhir(c) === "Disarankan").length
+        );
+        setText(
+            "statConsidered",
+            data.filter(c => getHasilAkhir(c) === "Dipertimbangkan").length
+        );
+        setText(
+            "statNotRecommended",
+            data.filter(c => getHasilAkhir(c) === "Tidak Direkomendasikan").length
+        );
+        return;
+    }
+
+    setText("statTotal", total);
+    setText("statRecommended", recommended);
+    setText("statConsidered", considered);
+    setText("statNotRecommended", notRecommended);
+    setText("statSetujuBibit", setujuBibit);
+    setText("statSetujuTad", setujuTad);
 }
 
 // ======================================================
@@ -1934,16 +1999,27 @@ function updateAreaConclusion(data) {
             getNormalizedHasil1(candidate) === "Disarankan"
         ).length;
 
-        // Bibit/TAD: hanya kandidat dengan hasil Interview 2 = SETUJU.
-        const isSetuju = candidate =>
-            String(candidate.hasilInterview2 || "").trim().toLowerCase() === "setuju";
+        // Bibit/TAD dihitung kalau:
+        //   - limpahan organik  -> Interview 2 = SETUJU
+        //   - check-in langsung -> hasil interviewnya bukan
+        //                          TIDAK DISARANKAN
+        const isDiterima = candidate => {
+            if (isJalurLangsung(candidate)) {
+                const hasil = getNormalizedHasil1(candidate);
+                return hasil === "Disarankan" || hasil === "Dipertimbangkan";
+            }
+
+            return String(candidate.hasilInterview2 || "")
+                .trim()
+                .toLowerCase() === "setuju";
+        };
 
         const bibit = areaCandidates.filter(candidate =>
-            candidate.rekomendasiJabatan === "FL Bibit" && isSetuju(candidate)
+            getAdminCategory(candidate) === "bibit" && isDiterima(candidate)
         ).length;
 
         const tad = areaCandidates.filter(candidate =>
-            candidate.rekomendasiJabatan === "Sales TAD" && isSetuju(candidate)
+            getAdminCategory(candidate) === "tad" && isDiterima(candidate)
         ).length;
 
         return `
@@ -2149,27 +2225,26 @@ function buildDetailHTML(
 
             ${detailRow(
                 "NIK",
-                candidate.nik ||
-                candidate.nomorKTP
-            )}
-
-
-            ${detailRow(
-                "Email",
-                candidate.email
-            )}
-
-
-            ${detailRow(
-                "Nomor HP",
-                candidate.noHp ||
-                candidate.nomorHP
+                candidate.noRegistrasi ||
+                candidate.id
             )}
 
 
             ${detailRow(
                 "Posisi",
                 candidate.posisi
+            )}
+
+
+            ${detailRow(
+                "Jalur",
+                getJalur(candidate).toUpperCase()
+            )}
+
+
+            ${detailRow(
+                "Tanggal Interview",
+                formatTanggalID(candidate.tanggal)
             )}
 
 
@@ -2477,6 +2552,16 @@ function isNeedInterview2(
     candidate
 ) {
 
+    // Kandidat jalur langsung (Bibit/TAD dari check-in) selesai
+    // dalam satu kali interview.
+    if (
+        isJalurLangsung(candidate)
+    ) {
+
+        return false;
+    }
+
+
     return (
 
         candidate.rekomendasiJabatan ===
@@ -2722,22 +2807,21 @@ function exportExcel() {
                         "",
 
                     "NIK":
-                        candidate.nik ||
-                        candidate.nomorKTP ||
-                        "",
-
-                    "Email":
-                        candidate.email ||
-                        "",
-
-                    "Nomor HP":
-                        candidate.noHp ||
-                        candidate.nomorHP ||
+                        candidate.noRegistrasi ||
+                        candidate.id ||
                         "",
 
                     "Posisi":
                         candidate.posisi ||
                         "",
+
+                    "Jalur":
+                        getJalur(candidate).toUpperCase(),
+
+                    "Hasil Akhir":
+                        getHasilAkhir(candidate) === "Tidak Direkomendasikan"
+                            ? "TIDAK DISARANKAN"
+                            : String(getHasilAkhir(candidate) || "").toUpperCase(),
 
                     "Status":
                         candidate.status ||

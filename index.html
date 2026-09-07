@@ -7,7 +7,7 @@
 
     <title>Interview System</title>
 
-    <link rel="stylesheet" href="style.css?v=20260902-1">
+    <link rel="stylesheet" href="style.css?v=20260907-1">
 </head>
 
 <body>
@@ -45,18 +45,26 @@
 
         <div id="halamanCheckIn">
 
+            <!-- Badge jalur, muncul setelah posisi dipilih -->
+
+            <div
+                class="jalur-badge"
+                id="jalurBadge"
+            ></div>
+
+
             <div class="card">
 
                 <!-- NO REGISTRASI -->
 
                 <label for="noRegistrasi">
-                    No Registrasi
+                    NIK
                 </label>
 
                 <input
                     type="text"
                     id="noRegistrasi"
-                    placeholder="Masukkan No Registrasi"
+                    placeholder="Masukkan NIK"
                     inputmode="numeric"
                     autocomplete="off"
                 >
@@ -77,6 +85,8 @@
 
 
                 <!-- POSISI -->
+                <!-- Isi dropdown ini dibuat oleh script.js mengikuti
+                     posisi yang diaktifkan admin. -->
 
                 <label for="posisi">
                     Posisi
@@ -86,14 +96,6 @@
 
                     <option value="">
                         -- Pilih Posisi --
-                    </option>
-
-                    <option value="Frontliner">
-                        Frontliner
-                    </option>
-
-                    <option value="Sales">
-                        Sales
                     </option>
 
                 </select>
@@ -157,7 +159,7 @@
                     <p>
 
                         <strong>
-                            No Registrasi
+                            NIK
                         </strong>
 
                         <span id="hasilRegistrasi"></span>
@@ -245,7 +247,7 @@
 
 
     <!-- ========================================= -->
-    <!-- MODAL UBAH TANGGAL -->
+    <!-- MODAL PENGATURAN INTERVIEW -->
     <!-- ========================================= -->
 
     <div
@@ -272,11 +274,87 @@
             >
 
 
+            <!-- ================================================= -->
+            <!-- POSISI YANG DITAMPILKAN SAAT CHECK-IN              -->
+            <!-- ================================================= -->
+
+            <div class="posisi-settings">
+
+                <h3>
+                    Posisi yang Dibuka
+                </h3>
+
+                <p class="hint">
+                    Centang posisi yang boleh dipilih peserta pada
+                    halaman check-in hari ini. Pengaturan ini berlaku
+                    untuk semua perangkat.
+                </p>
+
+
+                <label
+                    class="posisi-option"
+                    data-jalur="organik"
+                >
+                    <input
+                        type="checkbox"
+                        class="posisi-check"
+                        value="Frontliner"
+                    >
+                    <span class="dot"></span>
+                    Frontliner
+                </label>
+
+
+                <label
+                    class="posisi-option"
+                    data-jalur="organik"
+                >
+                    <input
+                        type="checkbox"
+                        class="posisi-check"
+                        value="Sales"
+                    >
+                    <span class="dot"></span>
+                    Sales
+                </label>
+
+
+                <label
+                    class="posisi-option"
+                    data-jalur="bibit"
+                >
+                    <input
+                        type="checkbox"
+                        class="posisi-check"
+                        value="Bibit"
+                    >
+                    <span class="dot"></span>
+                    Bibit
+                </label>
+
+
+                <label
+                    class="posisi-option"
+                    data-jalur="tad"
+                >
+                    <input
+                        type="checkbox"
+                        class="posisi-check"
+                        value="TAD"
+                    >
+                    <span class="dot"></span>
+                    TAD
+                </label>
+
+            </div>
+
+
             <button
                 class="admin-login-button"
+                style="margin-top:18px;"
                 onclick="simpanTanggal()"
             >
-                SIMPAN TANGGAL
+                SIMPAN PENGATURAN
             </button>
 
 
@@ -298,7 +376,7 @@
 
     <script
         type="module"
-        src="script.js?v=20260902-1"
+        src="script.js?v=20260907-1"
     ></script>
 
 </body>

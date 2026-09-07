@@ -2,6 +2,46 @@
     box-sizing: border-box;
 }
 
+
+/* ============================= */
+/* TONE WARNA PER JALUR          */
+/* ============================= */
+/* Warna halaman check-in mengikuti posisi yang dipilih
+   peserta:
+
+   - default (belum pilih) : hijau BSI
+   - Frontliner / Sales    : abu-abu  (jalur ORGANIK)
+   - Bibit                 : tosca    (jalur BIBIT)
+   - TAD                   : oren     (jalur TAD)
+
+   Semua warna di bawah memakai var(--tone-*) sehingga cukup
+   mengubah data-jalur pada <body> untuk mengganti seluruh tema. */
+
+:root {
+    --tone-main: #006b3f;
+    --tone-dark: #005331;
+    --tone-soft: #e8f3ee;
+}
+
+body[data-jalur="organik"] {
+    --tone-main: #6b7280;
+    --tone-dark: #4b5563;
+    --tone-soft: #f3f4f6;
+}
+
+body[data-jalur="bibit"] {
+    --tone-main: #00A39D;
+    --tone-dark: #00807b;
+    --tone-soft: #e6f6f5;
+}
+
+body[data-jalur="tad"] {
+    --tone-main: #F7941E;
+    --tone-dark: #d97b0c;
+    --tone-soft: #fef3e6;
+}
+
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -71,6 +111,31 @@ h1 {
 }
 
 
+/* Label jalur yang muncul begitu posisi dipilih. */
+
+.jalur-badge {
+    display: none;
+
+    margin: 0 auto 22px;
+    padding: 7px 16px;
+
+    border-radius: 20px;
+
+    background: var(--tone-soft);
+    color: var(--tone-dark);
+
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+
+    width: fit-content;
+}
+
+body[data-jalur] .jalur-badge {
+    display: block;
+}
+
+
 /* ============================= */
 /* FORM CARD */
 /* ============================= */
@@ -86,6 +151,10 @@ h1 {
         0 5px 20px rgba(0, 0, 0, 0.08);
 
     text-align: left;
+
+    border-top: 5px solid var(--tone-main);
+
+    transition: border-color .2s ease;
 }
 
 label {
@@ -114,7 +183,13 @@ input:focus,
 select:focus {
     outline: none;
 
-    border-color: #006b3f;
+    border-color: var(--tone-main);
+}
+
+#posisi {
+    border-color: var(--tone-main);
+    font-weight: bold;
+    color: var(--tone-dark);
 }
 
 
@@ -132,17 +207,24 @@ select:focus {
     border: none;
     border-radius: 8px;
 
-    background: #006b3f;
+    background: var(--tone-main);
     color: white;
 
     font-size: 16px;
     font-weight: bold;
 
     cursor: pointer;
+
+    transition: background .2s ease;
 }
 
 .checkin-button:hover {
-    background: #005331;
+    background: var(--tone-dark);
+}
+
+.checkin-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
 }
 
 
@@ -161,6 +243,8 @@ select:focus {
         0 5px 20px rgba(0, 0, 0, 0.08);
 
     text-align: center;
+
+    border-top: 5px solid var(--tone-main);
 }
 
 .success-icon {
@@ -171,7 +255,7 @@ select:focus {
 
     border-radius: 50%;
 
-    background: #006b3f;
+    background: var(--tone-main);
     color: white;
 
     display: flex;
@@ -183,7 +267,7 @@ select:focus {
 }
 
 .ticket-card h2 {
-    color: #006b3f;
+    color: var(--tone-main);
     margin-bottom: 10px;
 }
 
@@ -206,7 +290,7 @@ select:focus {
     font-size: 60px;
     font-weight: bold;
 
-    color: #006b3f;
+    color: var(--tone-main);
 }
 
 .candidate-info {
@@ -247,11 +331,17 @@ select:focus {
     display: flex;
     align-items: center;
     justify-content: center;
+
+    z-index: 9999;
+    padding: 15px;
 }
 
 .modal-content {
     width: 90%;
-    max-width: 400px;
+    max-width: 430px;
+
+    max-height: 90vh;
+    overflow-y: auto;
 
     background: white;
 
@@ -266,9 +356,81 @@ select:focus {
     margin-top: 0;
 }
 
-.modal-content input {
+.modal-content input[type="password"],
+.modal-content input[type="date"] {
     margin: 15px 0;
 }
+
+
+/* ============================= */
+/* PENGATURAN POSISI (ADMIN)     */
+/* ============================= */
+
+.posisi-settings {
+    margin: 20px 0 5px;
+    padding: 16px;
+
+    background: #f6f8f9;
+    border-radius: 12px;
+
+    text-align: left;
+}
+
+.posisi-settings h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+}
+
+.posisi-settings .hint {
+    margin: 0 0 12px;
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.posisi-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+    margin-bottom: 8px;
+
+    background: white;
+    border: 2px solid #e3e6e8;
+    border-radius: 10px;
+
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.posisi-option:last-child {
+    margin-bottom: 0;
+}
+
+.posisi-option input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    flex: none;
+}
+
+.posisi-option .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: none;
+}
+
+.posisi-option[data-jalur="organik"] .dot { background: #6b7280; }
+.posisi-option[data-jalur="bibit"]   .dot { background: #00A39D; }
+.posisi-option[data-jalur="tad"]     .dot { background: #F7941E; }
+
+.posisi-option[data-jalur="organik"].checked { border-color: #6b7280; background: #f3f4f6; }
+.posisi-option[data-jalur="bibit"].checked   { border-color: #00A39D; background: #e6f6f5; }
+.posisi-option[data-jalur="tad"].checked     { border-color: #F7941E; background: #fef3e6; }
 
 
 /* ============================= */
@@ -290,6 +452,10 @@ select:focus {
     font-weight: bold;
 
     cursor: pointer;
+}
+
+.admin-login-button:hover {
+    background: #005331;
 }
 
 .cancel-button {

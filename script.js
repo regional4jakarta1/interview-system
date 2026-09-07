@@ -69,6 +69,61 @@ const ADMIN_PASSWORD =
 
 
 // ======================================================
+// KATALOG POSISI + JALUR
+// ======================================================
+// Setiap posisi masuk ke salah satu JALUR:
+//
+//   organik -> Frontliner, Sales
+//              Alur lama: Interview 1, lalu bisa dilempar ke
+//              Interview 2 kalau direkomendasikan Bibit / TAD.
+//
+//   bibit   -> Bibit
+//   tad     -> TAD
+//              Jalur langsung: hanya SATU kali interview,
+//              penilaian sama persis dengan organik, hasil
+//              langsung final tanpa Interview 2.
+//
+// Warna tone dipakai di halaman check-in, dashboard
+// interviewer, dan layar panggilan.
+// ======================================================
+
+const POSISI_KATALOG = [
+    { value: "Frontliner", jalur: "organik", jabatan: null },
+    { value: "Sales",      jalur: "organik", jabatan: null },
+    { value: "Bibit",      jalur: "bibit",   jabatan: "FL Bibit" },
+    { value: "TAD",        jalur: "tad",     jabatan: "Sales TAD" }
+];
+
+
+const POSISI_DEFAULT = [
+    "Frontliner",
+    "Sales"
+];
+
+
+function getJalurDariPosisi(
+    posisi
+) {
+
+    const item =
+        POSISI_KATALOG.find(
+            entry =>
+                entry.value === posisi
+        );
+
+
+    return item
+        ? item.jalur
+        : "organik";
+}
+
+
+// Daftar posisi yang sedang dibuka admin.
+let posisiAktif =
+    POSISI_DEFAULT.slice();
+
+
+// ======================================================
 // TANGGAL
 // ======================================================
 
@@ -185,6 +240,45 @@ onSnapshot(
     activeDateRef,
     snapshot => {
 
+        // ==============================================
+        // POSISI YANG DIBUKA ADMIN
+        // ==============================================
+
+        const configData =
+            snapshot.exists()
+                ? (snapshot.data() || {})
+                : {};
+
+
+        if (
+            Array.isArray(configData.posisiAktif)
+        ) {
+
+            const valid =
+                configData.posisiAktif.filter(
+                    value =>
+                        POSISI_KATALOG.some(
+                            entry =>
+                                entry.value === value
+                        )
+                );
+
+
+            posisiAktif =
+                valid.length
+                    ? valid
+                    : POSISI_DEFAULT.slice();
+
+        } else {
+
+            posisiAktif =
+                POSISI_DEFAULT.slice();
+        }
+
+
+        renderPilihanPosisi();
+
+
         if (
             snapshot.exists() &&
             snapshot.data().activeDate
@@ -258,6 +352,141 @@ async function getActiveDate() {
 
 
     return await activeDateReady;
+}
+
+
+// ======================================================
+// RENDER PILIHAN POSISI + TEMA WARNA
+// ======================================================
+
+function renderPilihanPosisi() {
+
+    const select =
+        document.getElementById(
+            "posisi"
+        );
+
+
+    if (!select) {
+        return;
+    }
+
+
+    const sebelumnya =
+        select.value;
+
+
+    select.innerHTML =
+        '<option value="">-- Pilih Posisi --</option>';
+
+
+    POSISI_KATALOG.forEach(
+        entry => {
+
+            if (
+                !posisiAktif.includes(
+                    entry.value
+                )
+            ) {
+                return;
+            }
+
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                entry.value;
+
+            option.textContent =
+                entry.value;
+
+
+            select.appendChild(
+                option
+            );
+        }
+    );
+
+
+    // Kalau hanya satu posisi yang dibuka, langsung pilihkan
+    // saja supaya peserta tidak perlu memilih.
+    if (
+        posisiAktif.length === 1
+    ) {
+
+        select.value =
+            posisiAktif[0];
+
+    } else if (
+        posisiAktif.includes(
+            sebelumnya
+        )
+    ) {
+
+        select.value =
+            sebelumnya;
+    }
+
+
+    terapkanTemaPosisi();
+}
+
+
+function terapkanTemaPosisi() {
+
+    const select =
+        document.getElementById(
+            "posisi"
+        );
+
+
+    const badge =
+        document.getElementById(
+            "jalurBadge"
+        );
+
+
+    const posisi =
+        select
+            ? select.value
+            : "";
+
+
+    if (!posisi) {
+
+        delete document.body.dataset.jalur;
+
+
+        if (badge) {
+            badge.innerText = "";
+        }
+
+        return;
+    }
+
+
+    const jalur =
+        getJalurDariPosisi(
+            posisi
+        );
+
+
+    document.body.dataset.jalur =
+        jalur;
+
+
+    if (badge) {
+
+        badge.innerText =
+            jalur === "bibit"
+                ? "JALUR BIBIT"
+                : jalur === "tad"
+                    ? "JALUR TAD"
+                    : "JALUR ORGANIK";
+    }
 }
 
 
@@ -911,6 +1140,11 @@ async function prosesCheckIn(
                     posisi:
                         candidateData.posisi,
 
+                    // organik | bibit | tad
+                    jalur:
+                        candidateData.jalur ||
+                        "organik",
+
                     nomorAntrian:
                         nomorAntrian,
 
@@ -958,6 +1192,11 @@ async function prosesCheckIn(
 
                     posisi:
                         candidateData.posisi,
+
+                    // organik | bibit | tad
+                    jalur:
+                        candidateData.jalur ||
+                        "organik",
 
                     tanggal:
                         activeDate,
@@ -1210,14 +1449,14 @@ async function checkIn() {
         // ==============================================
 
         if (
-            posisi !==
-                "Frontliner" &&
-            posisi !==
-                "Sales"
+            !posisi ||
+            !posisiAktif.includes(
+                posisi
+            )
         ) {
 
             alert(
-                "Silakan pilih posisi."
+                "Silakan pilih posisi yang tersedia."
             );
 
             return;
@@ -1288,7 +1527,12 @@ async function checkIn() {
                     nama,
 
                 posisi:
-                    posisi
+                    posisi,
+
+                jalur:
+                    getJalurDariPosisi(
+                        posisi
+                    )
             });
 
 
@@ -1601,6 +1845,91 @@ async function loginAdmin() {
         input.value =
             await getActiveDate();
     }
+
+
+    // Centang posisi yang sedang dibuka.
+    isiCheckboxPosisi();
+}
+
+
+// ======================================================
+// CHECKBOX POSISI DI MODAL ADMIN
+// ======================================================
+
+function isiCheckboxPosisi() {
+
+    document
+        .querySelectorAll(".posisi-check")
+        .forEach(
+            checkbox => {
+
+                checkbox.checked =
+                    posisiAktif.includes(
+                        checkbox.value
+                    );
+
+
+                tandaiBarisPosisi(
+                    checkbox
+                );
+
+
+                // Pasang listener sekali saja.
+                if (
+                    !checkbox.dataset.bound
+                ) {
+
+                    checkbox.dataset.bound =
+                        "1";
+
+
+                    checkbox.addEventListener(
+                        "change",
+                        function() {
+                            tandaiBarisPosisi(this);
+                        }
+                    );
+                }
+            }
+        );
+}
+
+
+function tandaiBarisPosisi(
+    checkbox
+) {
+
+    const baris =
+        checkbox.closest(
+            ".posisi-option"
+        );
+
+
+    if (baris) {
+
+        baris.classList.toggle(
+            "checked",
+            checkbox.checked
+        );
+    }
+}
+
+
+function ambilPosisiTercentang() {
+
+    return Array.from(
+        document.querySelectorAll(
+            ".posisi-check"
+        )
+    )
+        .filter(
+            checkbox =>
+                checkbox.checked
+        )
+        .map(
+            checkbox =>
+                checkbox.value
+        );
 }
 
 
@@ -1640,6 +1969,22 @@ async function simpanTanggal() {
     }
 
 
+    const pilihanPosisi =
+        ambilPosisiTercentang();
+
+
+    if (
+        pilihanPosisi.length === 0
+    ) {
+
+        alert(
+            "Pilih minimal satu posisi yang dibuka untuk check-in."
+        );
+
+        return;
+    }
+
+
     try {
 
         // SIMPAN KE FIRESTORE AGAR GLOBAL
@@ -1649,6 +1994,8 @@ async function simpanTanggal() {
             {
                 activeDate:
                     tanggal,
+                posisiAktif:
+                    pilihanPosisi,
                 updatedAt:
                     new Date().toISOString(),
                 updatedBy:
@@ -1664,11 +2011,21 @@ async function simpanTanggal() {
         );
 
 
+        posisiAktif =
+            pilihanPosisi;
+
+
+        renderPilihanPosisi();
+
+
         tutupTanggal();
 
 
         alert(
-            "Tanggal interview berhasil diubah secara global.\n\nSemua perangkat yang membuka sistem akan menggunakan tanggal ini."
+            "Pengaturan interview berhasil disimpan.\n\n" +
+            "Tanggal  : " + formatTanggal(tanggal) + "\n" +
+            "Posisi   : " + pilihanPosisi.join(", ") + "\n\n" +
+            "Semua perangkat akan mengikuti pengaturan ini."
         );
 
     } catch (error) {
@@ -1729,6 +2086,25 @@ document.addEventListener(
     function() {
 
         tampilkanTanggal();
+
+
+        renderPilihanPosisi();
+
+
+        // Ganti tema warna halaman setiap posisi diganti.
+        const select =
+            document.getElementById(
+                "posisi"
+            );
+
+
+        if (select) {
+
+            select.addEventListener(
+                "change",
+                terapkanTemaPosisi
+            );
+        }
 
     }
 );

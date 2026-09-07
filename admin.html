@@ -793,6 +793,11 @@
             color:#fff;
         }
 
+        /* Tab jalur memakai tone warna masing-masing */
+        #tabAdminOrganik.active { background:#007a45; }
+        #tabAdminBibit.active   { background:#00A39D; }
+        #tabAdminTad.active     { background:#F7941E; }
+
         .tab-description {
             margin:-8px 0 18px;
             color:#666;
@@ -866,7 +871,12 @@
         <button type="button" class="interview-tab active" id="tabAdminAll" onclick="gantiTabInterview('all')">
             ALL
         </button>
-<button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
+
+        <button type="button" class="interview-tab" id="tabAdminOrganik" onclick="gantiTabInterview('organik')">
+            ORGANIK
+        </button>
+
+        <button type="button" class="interview-tab" id="tabAdminBibit" onclick="gantiTabInterview('bibit')">
             BIBIT
         </button>
 
@@ -1288,7 +1298,10 @@
             </h3>
 
             <p class="summary-subtitle">
-                Hanya menghitung kandidat yang <strong>DISARANKAN</strong> atau <strong>DISETUJUI</strong>.
+                Organik dihitung bila hasilnya <strong>DISARANKAN</strong>.
+                Bibit / TAD dihitung bila <strong>DISETUJUI</strong> di Interview 2,
+                atau &mdash; untuk yang check-in langsung &mdash; hasilnya
+                <strong>DISARANKAN</strong> / <strong>DIPERTIMBANGKAN</strong>.
             </p>
 
             <div id="summaryConclusion">
@@ -1514,7 +1527,7 @@
 
 <script
     type="module"
-    src="admin.js?v=20260902-2"
+    src="admin.js?v=20260907-1"
 ></script>
 
 </body>
