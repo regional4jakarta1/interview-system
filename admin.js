@@ -97,6 +97,21 @@ const TONE_JALUR = {
     tad: "#F7941E"
 };
 
+const JABATAN_JALUR = {
+    bibit: "FL Bibit",
+    tad: "Sales TAD"
+};
+
+// Jabatan yang ditampilkan di rekap. Kandidat jalur langsung
+// sudah pasti jabatannya sejak check-in, jadi tetap tampil
+// walaupun hasil interviewnya TIDAK DISARANKAN (yang membuat
+// rekomendasiJabatan tidak tersimpan).
+function getJabatanTampil(candidate) {
+    if (candidate.rekomendasiJabatan) return candidate.rekomendasiJabatan;
+    if (isJalurLangsung(candidate)) return JABATAN_JALUR[getJalur(candidate)];
+    return "";
+}
+
 function getJalur(candidate) {
     const jalur = String(candidate && candidate.jalur || "").toLowerCase();
     if (jalur === "bibit" || jalur === "tad" || jalur === "organik") return jalur;
@@ -1178,27 +1193,26 @@ function createTableRow(
     // HASIL I1
     // ==================================================
 
-    const hasil1HTML =
-        getHasil1HTML(
-            candidate
-        );
-
-
     // ==================================================
-    // HASIL I2
+    // JALUR LANGSUNG -> DITAMPILKAN DI LAJUR INTERVIEW 2
     // ==================================================
+    // Kandidat yang check-in langsung sebagai Bibit / TAD
+    // secara proses memang berada di tahap kedua, jadi di
+    // rekap hasilnya diletakkan pada kolom Interview 2:
+    //
+    //   Hasil I1        -> "-"
+    //   Interviewer I1  -> "-"
+    //   Interviewer I2  -> interviewer yang menangani
+    //   Hasil I2        -> DISARANKAN / DIPERTIMBANGKAN /
+    //                      TIDAK DISARANKAN
+    //
+    // Data di Firestore TIDAK diubah, hanya tampilannya.
 
-    const hasil2HTML =
-        getHasil2HTML(
-            candidate
-        );
+    const langsung =
+        isJalurLangsung(candidate);
 
 
-    // ==================================================
-    // INTERVIEWER
-    // ==================================================
-
-    const interviewer1 =
+    const namaInterviewer =
 
         candidate.interviewerTahap1 ||
 
@@ -1207,11 +1221,52 @@ function createTableRow(
         "-";
 
 
+    const hasil1HTML =
+        langsung
+            ? "-"
+            : getHasil1HTML(
+                  candidate
+              );
+
+
+    // ==================================================
+    // HASIL I2
+    // ==================================================
+
+    const hasil2HTML =
+        langsung
+            ? getHasil1HTML(
+                  candidate
+              )
+            : getHasil2HTML(
+                  candidate
+              );
+
+
+    // ==================================================
+    // INTERVIEWER
+    // ==================================================
+
+    const interviewer1 =
+        langsung
+            ? "-"
+            : namaInterviewer;
+
+
     const interviewer2 =
+        langsung
+            ? namaInterviewer
+            : (
+                candidate.interviewerTahap2 ||
+                "-"
+            );
 
-        candidate.interviewerTahap2 ||
 
-        "-";
+    // Badge tahap ikut menunjukkan Interview 2.
+    const tahapTampil =
+        langsung
+            ? 2
+            : tahap;
 
 
     return `
@@ -1281,14 +1336,14 @@ function createTableRow(
                 <span
                     class="
                         stage-badge
-                        ${tahap === 2
+                        ${tahapTampil === 2
                             ? "stage2"
                             : "stage1"}
                     "
                 >
 
                     Interview
-                    ${tahap}
+                    ${tahapTampil}
 
                 </span>
 
@@ -1316,7 +1371,7 @@ function createTableRow(
             <td>
 
                 ${escapeHtml(
-                    candidate.rekomendasiJabatan ||
+                    getJabatanTampil(candidate) ||
                     "-"
                 )}
 
@@ -2270,7 +2325,7 @@ function buildDetailHTML(
 
             <h3 class="stage-title">
 
-                Interview 1
+                Interview ${isJalurLangsung(candidate) ? 2 : 1}
 
             </h3>
 
@@ -2352,7 +2407,7 @@ function buildDetailHTML(
 
             ${detailRow(
                 "Rekomendasi Jabatan",
-                candidate.rekomendasiJabatan
+                getJabatanTampil(candidate)
             )}
 
 
@@ -2398,7 +2453,10 @@ function buildDetailHTML(
              INTERVIEW 2
              ========================================== -->
 
-        <div class="detail-box">
+        <div
+            class="detail-box"
+            style="${isJalurLangsung(candidate) ? "display:none;" : ""}"
+        >
 
             <h3 class="stage-title">
 
@@ -2501,13 +2559,15 @@ function buildDetailHTML(
 
 
             ${timelineRow(
-                "Mulai Interview 1",
+                "Mulai Interview " +
+                    (isJalurLangsung(candidate) ? "2" : "1"),
                 candidate.waktuMulai
             )}
 
 
             ${timelineRow(
-                "Submit Interview 1",
+                "Submit Interview " +
+                    (isJalurLangsung(candidate) ? "2" : "1"),
                 candidate.waktuSubmitTahap1 ||
                 candidate.waktuSubmit
             )}
@@ -2789,6 +2849,21 @@ function exportExcel() {
 
             (candidate, index) => {
 
+                // Jalur langsung ditulis pada kolom Interview 2,
+                // sama seperti tampilannya di tabel rekap.
+                const langsung =
+                    isJalurLangsung(candidate);
+
+                const namaInterviewer =
+                    candidate.interviewerTahap1 ||
+                    candidate.interviewer ||
+                    "";
+
+                const hasil1Teks =
+                    getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
+                        ? "TIDAK DISARANKAN"
+                        : String(getNormalizedHasil1(candidate) || "").toUpperCase();
+
                 return {
 
                     "No":
@@ -2828,8 +2903,9 @@ function exportExcel() {
                         "",
 
                     "Tahap Interview":
-                        candidate.tahapInterview ||
-                        1,
+                        langsung
+                            ? 2
+                            : (candidate.tahapInterview || 1),
 
 
                     // ==================================
@@ -2837,9 +2913,9 @@ function exportExcel() {
                     // ==================================
 
                     "Interviewer I1":
-                        candidate.interviewerTahap1 ||
-                        candidate.interviewer ||
-                        "",
+                        langsung
+                            ? ""
+                            : namaInterviewer,
 
                     "Waktu Mulai I1":
                         formatDateTime(
@@ -2877,17 +2953,12 @@ function exportExcel() {
                         "",
 
                     "Hasil I1":
-                        getNormalizedHasil1(candidate) === "Tidak Direkomendasikan"
-                            ? "TIDAK DISARANKAN"
-                            : getNormalizedHasil1(candidate) === "Dipertimbangkan"
-                                ? "DIPERTIMBANGKAN"
-                                : getNormalizedHasil1(candidate) === "Disarankan"
-                                    ? "DISARANKAN"
-                                    : candidate.hasil ||
-                                        "",
+                        langsung
+                            ? ""
+                            : hasil1Teks,
 
                     "Rekomendasi Jabatan":
-                        candidate.rekomendasiJabatan ||
+                        getJabatanTampil(candidate) ||
                         "",
 
                     "Rekomendasi Area":
@@ -2908,8 +2979,9 @@ function exportExcel() {
                         "",
 
                     "Interviewer I2":
-                        candidate.interviewerTahap2 ||
-                        "",
+                        langsung
+                            ? namaInterviewer
+                            : (candidate.interviewerTahap2 || ""),
 
                     "Waktu Mulai I2":
                         formatDateTime(
@@ -2922,8 +2994,9 @@ function exportExcel() {
                         ),
 
                     "Hasil I2":
-                        candidate.hasilInterview2 ||
-                        "",
+                        langsung
+                            ? hasil1Teks
+                            : (candidate.hasilInterview2 || ""),
 
                     "I2 Final":
                         candidate.interview2Final === true
